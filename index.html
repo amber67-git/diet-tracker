@@ -192,6 +192,7 @@
   .data-msg{font-size:11px;color:#0F6E56;opacity:0;transition:opacity .3s;margin-left:4px}
   .data-msg.show{opacity:1}
   .install-tip-close{margin-left:auto;cursor:pointer;color:var(--color-text-tertiary);font-size:16px}
+  #autoSaveIndicator{font-size:11px;color:#0F6E56;}
 </style>
 </head>
 <body>
@@ -248,6 +249,7 @@
     </div>
     <div class="save-row">
       <button class="save-btn" id="saveBtn"><i class="ti ti-device-floppy" style="font-size:15px" aria-hidden="true"></i> Save settings</button>
+      <span id="autoSaveIndicator" style="font-size:11px;color:#0F6E56;margin-left:6px;transition:opacity .3s"></span>
       <span class="save-msg" id="saveMsg"><i class="ti ti-check" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Saved — bookmark this URL</span>
       <div class="url-box" id="urlBox"></div>
     </div>
@@ -448,6 +450,7 @@ function showDataMsg(msg){
   setTimeout(()=>el.classList.remove('show'),3000);
 }
 function saveLocal(){
+  try{document.getElementById('autoSaveIndicator').textContent='Saved ✓';clearTimeout(window._saveTimer);window._saveTimer=setTimeout(()=>{document.getElementById('autoSaveIndicator').textContent='';},2000);}catch(e){}
   try{
     localStorage.setItem('dmt_meals',JSON.stringify(mealData));
     localStorage.setItem('dmt_usage',JSON.stringify(usageCount));
