@@ -751,8 +751,8 @@ function renderFoodList(filter){
   }
   document.getElementById('foodList').innerHTML=html;
   document.querySelectorAll('.food-item').forEach(el=>{
-    el.addEventListener('dragstart',e=>{dragFood=parseInt(el.dataset.id);el.classList.add('dragging');e.dataTransfer.effectAllowed='copy';});
-    el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+    el.addEventListener('dragstart',e=>{dragFood=parseInt(el.dataset.id);dragPlaced=null;el.classList.add('dragging');e.dataTransfer.effectAllowed='copy';});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragFood=null;});
   });
   syncLibraryHeight();
 }
@@ -795,8 +795,9 @@ function renderMealGrid(){
       dragFood=null;
       item.classList.add('dragging-placed');
       e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
     });
-    item.addEventListener('dragend',()=>item.classList.remove('dragging-placed'));
+    item.addEventListener('dragend',()=>{item.classList.remove('dragging-placed');dragPlaced=null;});
     item.addEventListener('dblclick',e=>{
       // find the foodId from the entry
       const date=item.dataset.pfromDate;
