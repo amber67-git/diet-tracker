@@ -113,10 +113,10 @@
   .add-food-form.open{display:flex}
   .aff-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
   .aff-note{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px}
-  .aff-row{display:flex;gap:6px;align-items:center}
-  .aff-label{font-size:11px;color:var(--color-text-secondary);min-width:52px;flex-shrink:0}
-  .aff-input{flex:1;min-width:0;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary)}
-  .aff-select{font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary);flex:1;min-width:0}
+  .aff-row{display:flex;gap:8px;align-items:center;width:100%}
+  .aff-label{font-size:11px;color:var(--color-text-secondary);width:52px;min-width:52px;flex-shrink:0;text-align:right}
+  .aff-input{flex:1;min-width:0;width:100%;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary)}
+  .aff-select{font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary);flex:1;min-width:0;width:100%}
   .aff-grid{display:grid;grid-template-columns:1fr;gap:6px}
   .aff-actions{display:flex;gap:6px;margin-top:4px}
   .aff-save{flex:1;font-size:12px;font-weight:500;padding:6px;border:0.5px solid #185FA5;border-radius:var(--border-radius-md);background:#E6F1FB;color:#185FA5;cursor:pointer}
@@ -364,6 +364,7 @@ function saveLocal(){
     localStorage.setItem('dmt_recent',JSON.stringify(recentAmounts));
     const custom=FOODS.filter(f=>f.custom);
     localStorage.setItem('dmt_custom',JSON.stringify(custom));
+    localStorage.setItem('dmt_nextId',JSON.stringify(nextId));
   }catch(e){}
 }
 function loadLocal(){
@@ -371,8 +372,16 @@ function loadLocal(){
     const m=localStorage.getItem('dmt_meals');if(m)mealData=JSON.parse(m);
     const u=localStorage.getItem('dmt_usage');if(u)usageCount=JSON.parse(u);
     const r=localStorage.getItem('dmt_recent');if(r)recentAmounts=JSON.parse(r);
+    const ni=localStorage.getItem('dmt_nextId');if(ni)nextId=Math.max(nextId,JSON.parse(ni));
     const c=localStorage.getItem('dmt_custom');
-    if(c){const custom=JSON.parse(c);custom.forEach(f=>{if(!FOODS.find(x=>x.id===f.id))FOODS.push(f);});}
+    if(c){
+      const custom=JSON.parse(c);
+      custom.forEach(f=>{
+        const existing=FOODS.findIndex(x=>x.id===f.id);
+        if(existing===-1){FOODS.push(f);}
+        else{FOODS[existing]=f;}
+      });
+    }
   }catch(e){}
 }
 
@@ -487,9 +496,13 @@ function renderWeek(){
 function onSearch(val){currentSearch=val;renderFoodList(val);}
 function openAddForm(){
   document.getElementById('affName').value=currentSearch||'';
+  document.getElementById('affCat').value='carb';
   ['affCal','affCarb','affProt','affFat'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('affDefault').value='100';
   document.getElementById('addFoodForm').classList.add('open');
+  const saveBtn=document.querySelector('.aff-save');
+  saveBtn.textContent='Add to library';
+  saveBtn.onclick=saveCustomFood;
   document.getElementById('affName').focus();
 }
 function closeAddForm(){
@@ -545,7 +558,7 @@ function renderFoodList(filter){
         if(count>0&&!shownFreq){html+=`<div class="freq-header"><i class="ti ti-flame" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Frequently used</div>`;shownFreq=true;}
         if(count===0&&!shownAll){html+=`<div class="freq-header">All foods</div>`;shownAll=true;}
       }
-      html+=`<div class="food-item" draggable="true" data-id="${f.id}" style="position:relative;padding-right:36px">${count>0?`<span class="fi-freq">${count}x</span>`:''}<span class="cat-pill cat-${f.cat}">${f.cat}${f.custom?' ★':''}</span><button onclick="event.stopPropagation();editFood(${f.id})" style="position:absolute;top:8px;right:8px;font-size:11px;color:var(--color-text-tertiary);cursor:pointer;padding:2px 5px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);line-height:1.4" title="Edit food">&#9998;</button><div class="fi-name">${f.name}</div><div class="fi-meta">C ${f.per100.carb}g · P ${f.per100.prot}g · F ${f.per100.fat}g / 100g</div></div>`;
+      html+=`<div class="food-item" draggable="true" data-id="${f.id}" style="position:relative;padding-right:36px"><span class="cat-pill cat-${f.cat}">${f.cat}${f.custom?' ★':''}</span><button onclick="event.stopPropagation();editFood(${f.id})" style="position:absolute;top:8px;right:8px;font-size:11px;color:var(--color-text-tertiary);cursor:pointer;padding:2px 5px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);line-height:1.4" title="Edit food">&#9998;</button><div class="fi-name">${f.name}</div><div class="fi-meta">C ${f.per100.carb}g · P ${f.per100.prot}g · F ${f.per100.fat}g / 100g</div></div>`;
     });
   }
   document.getElementById('foodList').innerHTML=html;
@@ -577,8 +590,8 @@ function renderMealGrid(){
       const items=entries.map((entry,idx)=>{
         const f=FOODS.find(x=>x.id===entry.foodId);if(!f)return'';
         const mc=calcMacros(f,entry.amount);
-        const mem=recentAmounts[f.id];const showHint=mem&&mem!==entry.amount;
-        return`<div class="placed-item"><div class="pi-name-row"><span class="pi-name">${f.name}</span><span class="pi-rm" data-date="${date}" data-meal="${meal}" data-idx="${idx}">×</span></div><div class="pi-kcal-row"><span class="pi-kcal-val">${mc.cal}</span> kcal</div><div class="pi-cpf-row"><span class="pi-cpf-item">C <span class="pi-cpf-val">${mc.carb}g</span></span><span class="pi-cpf-item">P <span class="pi-cpf-val">${mc.prot}g</span></span><span class="pi-cpf-item">F <span class="pi-cpf-val">${mc.fat}g</span></span></div><div class="pi-amt-row"><input class="pi-amt" type="number" min="1" step="5" value="${entry.amount}" data-date="${date}" data-meal="${meal}" data-idx="${idx}"/><span class="pi-unit">g</span></div>${showHint?`<div class="mem-hint" data-date="${date}" data-meal="${meal}" data-idx="${idx}" data-mem="${mem}"><span class="mem-hint-txt"><i class="ti ti-clock" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Last: ${mem}g</span><span class="mem-hint-btn">Use this →</span></div>`:''}</div>`;
+        
+        return`<div class="placed-item"><div class="pi-name-row"><span class="pi-name">${f.name}</span><span class="pi-rm" data-date="${date}" data-meal="${meal}" data-idx="${idx}">×</span></div><div class="pi-kcal-row"><span class="pi-kcal-val">${mc.cal}</span> kcal</div><div class="pi-cpf-row"><span class="pi-cpf-item">C <span class="pi-cpf-val">${mc.carb}g</span></span><span class="pi-cpf-item">P <span class="pi-cpf-val">${mc.prot}g</span></span><span class="pi-cpf-item">F <span class="pi-cpf-val">${mc.fat}g</span></span></div><div class="pi-amt-row"><input class="pi-amt" type="number" min="1" step="5" value="${entry.amount}" data-date="${date}" data-meal="${meal}" data-idx="${idx}"/><span class="pi-unit">g</span></div></div>`;
       }).join('');
       return`<div class="meal-col"><div class="meal-head">${meal}</div><div class="meal-cell" data-date="${date}" data-meal="${meal}">${items}${entries.length===0?'<div class="drop-hint">drop food here</div>':''}</div></div>`;
     }).join('')}</div></div>`;
@@ -603,9 +616,7 @@ function renderMealGrid(){
       const v=parseFloat(inp.value);if(v>0){const entry=mealData[inp.dataset.date][inp.dataset.meal][parseInt(inp.dataset.idx)];entry.amount=v;recentAmounts[entry.foodId]=v;saveLocal();renderAll();}
     });
   });
-  document.querySelectorAll('.mem-hint').forEach(hint=>{
-    hint.addEventListener('click',()=>{const{date,meal,idx,mem}=hint.dataset;mealData[date][meal][parseInt(idx)].amount=parseFloat(mem);saveLocal();renderAll();});
-  });
+
   syncLibraryHeight();
 }
 function renderAll(){renderMacroBar();renderFoodList(currentSearch);renderMealGrid();if(currentTab==='week')renderWeek();}
