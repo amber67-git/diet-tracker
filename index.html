@@ -362,9 +362,9 @@ function saveLocal(){
     localStorage.setItem('dmt_meals',JSON.stringify(mealData));
     localStorage.setItem('dmt_usage',JSON.stringify(usageCount));
     localStorage.setItem('dmt_recent',JSON.stringify(recentAmounts));
-    const custom=FOODS.filter(f=>f.custom);
-    localStorage.setItem('dmt_custom',JSON.stringify(custom));
     localStorage.setItem('dmt_nextId',JSON.stringify(nextId));
+    // Save ALL foods (custom + edited built-ins)
+    localStorage.setItem('dmt_all_foods',JSON.stringify(FOODS));
   }catch(e){}
 }
 function loadLocal(){
@@ -373,14 +373,18 @@ function loadLocal(){
     const u=localStorage.getItem('dmt_usage');if(u)usageCount=JSON.parse(u);
     const r=localStorage.getItem('dmt_recent');if(r)recentAmounts=JSON.parse(r);
     const ni=localStorage.getItem('dmt_nextId');if(ni)nextId=Math.max(nextId,JSON.parse(ni));
-    const c=localStorage.getItem('dmt_custom');
-    if(c){
-      const custom=JSON.parse(c);
-      custom.forEach(f=>{
-        const existing=FOODS.findIndex(x=>x.id===f.id);
-        if(existing===-1){FOODS.push(f);}
-        else{FOODS[existing]=f;}
+    // Restore all foods including edited built-ins
+    const af=localStorage.getItem('dmt_all_foods');
+    if(af){
+      const saved=JSON.parse(af);
+      saved.forEach(f=>{
+        const idx=FOODS.findIndex(x=>x.id===f.id);
+        if(idx===-1){FOODS.push(f);}
+        else{FOODS[idx]=f;}
       });
+      // Update nextId based on max id found
+      const maxId=Math.max(...saved.map(f=>f.id));
+      if(maxId>=nextId)nextId=maxId+1;
     }
   }catch(e){}
 }
@@ -506,8 +510,10 @@ function openAddForm(){
 }
 let editingFoodId=null;
 function getFormValues(){
+  const rawName=document.getElementById('affName').value.trim();
+  const capName=rawName?rawName.charAt(0).toUpperCase()+rawName.slice(1):'';
   return{
-    name:document.getElementById('affName').value.trim(),
+    name:capName,
     cat:document.getElementById('affCat').value,
     cal:parseFloat(document.getElementById('affCal').value)||0,
     carb:parseFloat(document.getElementById('affCarb').value)||0,
@@ -634,6 +640,8 @@ document.getElementById('calGoal').addEventListener('input',renderAll);
 ['rCarb','rProt','rFat'].forEach(id=>document.getElementById(id).addEventListener('input',renderAll));
 const ro=new ResizeObserver(syncLibraryHeight);
 ro.observe(document.getElementById('mealGrid'));
+// Capitalize all food names on load
+FOODS.forEach(f=>{if(f.name)f.name=f.name.charAt(0).toUpperCase()+f.name.slice(1);});
 loadLocal();
 loadFromURL();
 updateWeekNav();
