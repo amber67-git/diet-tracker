@@ -263,7 +263,7 @@
           <div class="aff-row"><span class="aff-label">Default</span><input class="aff-input" id="affDefault" type="number" min="1" placeholder="100"/><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:4px">g</span></div>
           <div class="aff-actions">
             <button class="aff-cancel" onclick="closeAddForm()">Cancel</button>
-            <button class="aff-save" onclick="saveCustomFood()"><i class="ti ti-check" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Add to library</button>
+            <button class="aff-save" id="affSaveBtn" onclick="saveCustomFood()"><i class="ti ti-check" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Add to library</button>
           </div>
         </div>
       </div>
@@ -495,30 +495,44 @@ function renderWeek(){
 }
 function onSearch(val){currentSearch=val;renderFoodList(val);}
 function openAddForm(){
+  editingFoodId=null;
   document.getElementById('affName').value=currentSearch||'';
   document.getElementById('affCat').value='carb';
   ['affCal','affCarb','affProt','affFat'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('affDefault').value='100';
+  document.querySelector('.aff-save').textContent='Add to library';
   document.getElementById('addFoodForm').classList.add('open');
-  const saveBtn=document.querySelector('.aff-save');
-  saveBtn.textContent='Add to library';
-  saveBtn.onclick=saveCustomFood;
   document.getElementById('affName').focus();
 }
+let editingFoodId=null;
+function getFormValues(){
+  return{
+    name:document.getElementById('affName').value.trim(),
+    cat:document.getElementById('affCat').value,
+    cal:parseFloat(document.getElementById('affCal').value)||0,
+    carb:parseFloat(document.getElementById('affCarb').value)||0,
+    prot:parseFloat(document.getElementById('affProt').value)||0,
+    fat:parseFloat(document.getElementById('affFat').value)||0,
+    def:parseFloat(document.getElementById('affDefault').value)||100
+  };
+}
 function closeAddForm(){
+  editingFoodId=null;
   document.getElementById('addFoodForm').classList.remove('open');
-  const saveBtn=document.querySelector('.aff-save');
-  saveBtn.textContent='Add to library';
-  saveBtn.onclick=saveCustomFood;
+  document.querySelector('.aff-save').textContent='Add to library';
 }
 function saveCustomFood(){
-  const name=document.getElementById('affName').value.trim();if(!name)return;
-  FOODS.push({id:nextId++,name,cat:document.getElementById('affCat').value,unit:'g',default:parseFloat(document.getElementById('affDefault').value)||100,per100:{cal:parseFloat(document.getElementById('affCal').value)||0,carb:parseFloat(document.getElementById('affCarb').value)||0,prot:parseFloat(document.getElementById('affProt').value)||0,fat:parseFloat(document.getElementById('affFat').value)||0},custom:true});
-  closeAddForm();document.getElementById('foodSearch').value='';currentSearch='';
+  if(editingFoodId!==null){updateFood();return;}
+  const v=getFormValues();if(!v.name)return;
+  FOODS.push({id:nextId++,name:v.name,cat:v.cat,unit:'g',default:v.def,
+    per100:{cal:v.cal,carb:v.carb,prot:v.prot,fat:v.fat},custom:true});
+  closeAddForm();
+  document.getElementById('foodSearch').value='';currentSearch='';
   saveLocal();renderFoodList('');
 }
 function editFood(id){
   const f=FOODS.find(x=>x.id===id);if(!f)return;
+  editingFoodId=id;
   document.getElementById('affName').value=f.name;
   document.getElementById('affCat').value=f.cat;
   document.getElementById('affCal').value=f.per100.cal;
@@ -526,21 +540,17 @@ function editFood(id){
   document.getElementById('affProt').value=f.per100.prot;
   document.getElementById('affFat').value=f.per100.fat;
   document.getElementById('affDefault').value=f.default;
+  document.querySelector('.aff-save').textContent='Update food';
   document.getElementById('addFoodForm').classList.add('open');
-  const saveBtn=document.querySelector('.aff-save');
-  saveBtn.textContent='Update food';
-  saveBtn.onclick=()=>updateFood(id);
   document.getElementById('affName').focus();
 }
-function updateFood(id){
-  const f=FOODS.find(x=>x.id===id);if(!f)return;
-  f.name=document.getElementById('affName').value.trim()||f.name;
-  f.cat=document.getElementById('affCat').value;
-  f.per100.cal=parseFloat(document.getElementById('affCal').value)||0;
-  f.per100.carb=parseFloat(document.getElementById('affCarb').value)||0;
-  f.per100.prot=parseFloat(document.getElementById('affProt').value)||0;
-  f.per100.fat=parseFloat(document.getElementById('affFat').value)||0;
-  f.default=parseFloat(document.getElementById('affDefault').value)||100;
+function updateFood(){
+  const f=FOODS.find(x=>x.id===editingFoodId);if(!f)return;
+  const v=getFormValues();
+  if(v.name)f.name=v.name;
+  f.cat=v.cat;
+  f.per100.cal=v.cal;f.per100.carb=v.carb;f.per100.prot=v.prot;f.per100.fat=v.fat;
+  f.default=v.def;
   closeAddForm();saveLocal();renderAll();
 }
 function renderFoodList(filter){
