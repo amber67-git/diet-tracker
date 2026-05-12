@@ -65,14 +65,18 @@
   .save-msg.show{opacity:1}
   .url-box{flex:1;font-size:10px;color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 8px;background:var(--color-background-secondary);word-break:break-all;display:none;min-width:0}
   .url-box.show{display:block}
-  .macro-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-  @media(max-width:600px){.macro-bar{grid-template-columns:repeat(2,1fr)}}
-  .macro-card{background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)}
-  .mc-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
-  .mc-nums{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:5px}
-  .mc-rem{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px}
-  .track{height:5px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden}
+  .macro-bar{display:flex;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:14px}
+  @media(max-width:600px){.macro-bar{flex-wrap:wrap}}
+  .macro-card{flex:1;padding:14px 16px;border-right:0.5px solid var(--color-border-tertiary);min-width:0}
+  .macro-card:last-child{border-right:none}
+  @media(max-width:600px){.macro-card{flex:0 0 50%;border-bottom:0.5px solid var(--color-border-tertiary)}}
+  .mc-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .mc-nums{font-size:15px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc-nums span{font-size:12px;font-weight:400;color:var(--color-text-tertiary)}
+  .mc-rem{font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
+  .track{height:5px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:4px}
   .fill{height:100%;border-radius:99px;transition:width .3s}
+  .mc-pct{font-size:10px;color:var(--color-text-tertiary)}
   .fc{background:#D85A30}.fb{background:#378ADD}.fp{background:#1D9E75}.ff{background:#EF9F27}
   .top-controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
   .week-nav{display:flex;align-items:center;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-primary)}
@@ -132,7 +136,9 @@
   .meal-head{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;padding:7px 10px 6px;border:0.5px solid var(--color-border-tertiary);border-bottom:none;border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;background:var(--color-background-secondary)}
   .meal-cell{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:0 0 var(--border-radius-md) var(--border-radius-md);min-height:80px;padding:8px;transition:border-color .15s,background .15s;flex:1}
   .meal-cell.drag-over{border-color:#378ADD;background:rgba(55,138,221,.06)}
-  .placed-item{background:var(--color-background-secondary);border-radius:6px;padding:8px 10px;margin-bottom:6px}
+  .placed-item{background:var(--color-background-secondary);border-radius:6px;padding:8px 10px;margin-bottom:6px;cursor:grab}
+  .placed-item:active{cursor:grabbing;opacity:.6}
+  .placed-item.dragging-placed{opacity:.4}
   .pi-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;margin-bottom:5px}
   .pi-name{font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.3;flex:1}
   .pi-rm{font-size:15px;color:var(--color-text-tertiary);cursor:pointer;line-height:1;flex-shrink:0;margin-left:4px}
@@ -575,43 +581,92 @@ function renderMacroBar(){
   }).join('');
 }
 function renderWeek(){
-  const g=getGoals();
-  const dates=getWeekDates(weekOffset);
+  var g=getGoals();
+  var dates=getWeekDates(weekOffset);
   ensureWeekData(dates);
-  const weekTotals=dates.map(d=>getDayTotals(d));
-  const loggedDays=weekTotals.filter(t=>t.cal>0).length;
-  const totalCal=weekTotals.reduce((s,t)=>s+t.cal,0);
-  const avgCal=loggedDays>0?Math.round(totalCal/loggedDays):0;
-  const today=getTodayKey();
-  const weekTarget=g.valid?g.cal*7:null;
-  const weekPct=weekTarget?Math.round((totalCal/weekTarget)*100):null;
-  const cards=[
-    {label:'Total this week',val:totalCal.toLocaleString()+' kcal',sub:loggedDays+' day'+(loggedDays!==1?'s':'')+' logged'},
-    {label:'Daily average',val:avgCal.toLocaleString()+' kcal',sub:'vs goal: '+(g.cal||'---')+' kcal'},
-    {label:'Weekly progress',val:weekPct!==null?weekPct+'%':'---',sub:weekTarget?totalCal.toLocaleString()+' / '+weekTarget.toLocaleString()+' kcal':'set goals first'},
-    {label:'Days on track',val:g.valid?weekTotals.filter(t=>t.cal>0&&t.cal<=g.cal).length+' / 7':'---',sub:'within calorie goal'},
-  ];
-  const summaryHtml='<div class="week-summary-grid">'+cards.map(c=>'<div class="week-card"><div class="wc-label">'+c.label+'</div><div class="wc-val">'+c.val+'</div><div class="wc-sub">'+c.sub+'</div></div>').join('')+'</div>';
-  const dayCards=dates.map((date,i)=>{
-    const t=weekTotals[i];
-    const isToday=date===today;
-    const hasData=t.cal>0;
-    const calPct=g.valid&&g.cal?Math.min(100,Math.round((t.cal/g.cal)*100)):0;
-    const carbPct=g.valid&&g.carb?Math.min(100,Math.round((t.carb/g.carb)*100)):0;
-    const protPct=g.valid&&g.prot?Math.min(100,Math.round((t.prot/g.prot)*100)):0;
-    const fatPct=g.valid&&g.fat?Math.min(100,Math.round((t.fat/g.fat)*100)):0;
-    const over=g.valid&&g.cal&&t.cal>g.cal;
-    const statusLabel=!hasData?'No data':over?'Over goal':calPct>=90?'On track':calPct>=50?'Partial':'Low';
-    const statusCls=!hasData?'':over?'over':calPct>=90?'done':'partial';
-    let html='<div class="wd-card'+(isToday?' today':'')+(!hasData?' empty':'')+'"><div class="wd-top"><span class="wd-day">'+DAYS_SHORT[i]+'</span><span class="wd-date">'+date+'</span>'+(isToday?'<span class="wd-today-badge">Today</span>':'')+(hasData?'<span class="wd-kcal">'+t.cal.toLocaleString()+' <span class="wd-kcal-goal">/ '+(g.cal||'---')+' kcal</span></span>':'<span class="wd-kcal-goal" style="margin-left:auto">No meals logged</span>')+(hasData?'<span class="wd-status '+statusCls+'">'+statusLabel+'</span>':'')+'</div>';
-    if(hasData){
-      html+='<div class="wd-macro-row"><div class="wd-macro"><div class="wd-macro-label">Carbs</div><div class="wd-macro-val" style="color:#378ADD">'+t.carb+'g</div><div class="wd-macro-goal">goal '+(g.carb||'---')+'g</div></div><div class="wd-macro"><div class="wd-macro-label">Protein</div><div class="wd-macro-val" style="color:#1D9E75">'+t.prot+'g</div><div class="wd-macro-goal">goal '+(g.prot||'---')+'g</div></div><div class="wd-macro"><div class="wd-macro-label">Fat</div><div class="wd-macro-val" style="color:#EF9F27">'+t.fat+'g</div><div class="wd-macro-goal">goal '+(g.fat||'---')+'g</div></div></div>';
-      html+='<div class="wd-bar-row"><div class="wd-bar-item"><span class="wd-bar-label" style="color:#D85A30">Cal</span><div class="wd-bar-track"><div class="wd-bar-fill fc" style="width:'+calPct+'%"></div></div><span class="wd-bar-pct">'+calPct+'%</span></div><div class="wd-bar-item"><span class="wd-bar-label" style="color:#378ADD">C</span><div class="wd-bar-track"><div class="wd-bar-fill fb" style="width:'+carbPct+'%"></div></div><span class="wd-bar-pct">'+carbPct+'%</span></div><div class="wd-bar-item"><span class="wd-bar-label" style="color:#1D9E75">P</span><div class="wd-bar-track"><div class="wd-bar-fill fp" style="width:'+protPct+'%"></div></div><span class="wd-bar-pct">'+protPct+'%</span></div><div class="wd-bar-item"><span class="wd-bar-label" style="color:#EF9F27">F</span><div class="wd-bar-track"><div class="wd-bar-fill ff" style="width:'+fatPct+'%"></div></div><span class="wd-bar-pct">'+fatPct+'%</span></div></div>';
+  var totals=dates.map(function(d){return getDayTotals(d);});
+  var today=getTodayKey();
+  var logged=totals.filter(function(t){return t.cal>0;});
+  var totalCal=logged.reduce(function(s,t){return s+t.cal;},0);
+  var avgCal=logged.length?Math.round(totalCal/logged.length):0;
+  var weekTarget=g.valid?g.cal*7:0;
+  var onTrack=g.valid?totals.filter(function(t){return t.cal>0&&t.cal<=g.cal;}).length:0;
+  var weekPct=weekTarget?Math.round(totalCal/weekTarget*100):0;
+
+  var html='';
+
+  // Top 4 summary cards
+  html+='<div class="week-summary-grid" style="margin-bottom:20px">';
+  html+='<div class="week-card"><div class="wc-label">Total this week</div><div class="wc-val">'+totalCal.toLocaleString()+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">'+logged.length+' day'+(logged.length!==1?'s':'')+' logged</div></div>';
+  html+='<div class="week-card"><div class="wc-label">Daily average</div><div class="wc-val">'+avgCal.toLocaleString()+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">goal: '+(g.cal||'--')+' kcal/day</div></div>';
+  html+='<div class="week-card"><div class="wc-label">Weekly target</div><div class="wc-val">'+(weekTarget?weekTarget.toLocaleString():'--')+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">'+(weekTarget?weekPct+'% reached':'set goals first')+'</div></div>';
+  html+='<div class="week-card"><div class="wc-label">Days on track</div><div class="wc-val" style="color:'+(onTrack>=5?'#0F6E56':onTrack>=3?'#854F0B':'#A32D2D')+'">'+(g.valid?onTrack+' / 7':'--')+'</div><div class="wc-sub">within calorie goal</div></div>';
+  html+='</div>';
+
+  // Day cards
+  html+='<div class="week-day-grid">';
+  for(var i=0;i<dates.length;i++){
+    var date=dates[i];
+    var t=totals[i];
+    var isToday=date===today;
+    var has=t.cal>0;
+    var calPct=g.cal?Math.min(100,Math.round(t.cal/g.cal*100)):0;
+    var carbPct=g.carb?Math.min(100,Math.round(t.carb/g.carb*100)):0;
+    var protPct=g.prot?Math.min(100,Math.round(t.prot/g.prot*100)):0;
+    var fatPct=g.fat?Math.min(100,Math.round(t.fat/g.fat*100)):0;
+    var over=g.cal&&t.cal>g.cal;
+    var statusHtml='';
+    if(has){
+      if(over) statusHtml='<span class="wd-status over">Over</span>';
+      else if(calPct>=90) statusHtml='<span class="wd-status done">On track</span>';
+      else if(calPct>=50) statusHtml='<span class="wd-status partial">Partial</span>';
+      else statusHtml='<span class="wd-status partial">Low</span>';
+    }
+
+    html+='<div class="wd-card'+(isToday?' today':'')+(!has?' empty':'')+'">';
+
+    // Top row: day + date + kcal + status
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(has?'12px':'0')+'">';
+    html+='<span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">'+DAYS_SHORT[i]+'</span>';
+    html+='<span style="font-size:11px;color:var(--color-text-tertiary)">'+date+'</span>';
+    if(isToday) html+='<span class="wd-today-badge">Today</span>';
+    html+='<span style="margin-left:auto;font-size:13px;font-weight:500;color:var(--color-text-primary)">';
+    if(has) html+=t.cal.toLocaleString()+' <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">/ '+(g.cal||'--')+' kcal</span>';
+    html+='</span>';
+    html+=statusHtml;
+    html+='</div>';
+
+    if(has){
+      // Single box with 4 vertical sections: Cal | Carbs | Protein | Fat
+      html+='<div style="display:flex;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">';
+
+      var sections=[
+        {label:'kcal', val:t.cal.toLocaleString(), goal:(g.cal||'--')+'', unit:'kcal', pct:calPct, color:'#D85A30'},
+        {label:'Carbs', val:t.carb+'g', goal:(g.carb||'--')+'g', unit:'', pct:carbPct, color:'#378ADD'},
+        {label:'Protein', val:t.prot+'g', goal:(g.prot||'--')+'g', unit:'', pct:protPct, color:'#1D9E75'},
+        {label:'Fat', val:t.fat+'g', goal:(g.fat||'--')+'g', unit:'', pct:fatPct, color:'#EF9F27'},
+      ];
+
+      for(var s=0;s<sections.length;s++){
+        var sec=sections[s];
+        var notLast=s<sections.length-1;
+        html+='<div style="flex:1;padding:10px 12px;'+(notLast?'border-right:0.5px solid var(--color-border-tertiary);':'')+'">';
+        html+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">'+sec.label+'</div>';
+        html+='<div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px">'+sec.val+'</div>';
+        html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">/ '+sec.goal+'</div>';
+        html+='<div style="height:4px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:3px">';
+        html+='<div style="width:'+sec.pct+'%;height:100%;border-radius:99px;background:'+sec.color+'"></div>';
+        html+='</div>';
+        html+='<div style="font-size:10px;color:'+sec.color+';font-weight:500">'+sec.pct+'%</div>';
+        html+='</div>';
+      }
+      html+='</div>';
     }
     html+='</div>';
-    return html;
-  }).join('');
-  document.getElementById('weekPanel').innerHTML=summaryHtml+'<div class="week-day-grid">'+dayCards+'</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('weekPanel').innerHTML=html;
 }
 
 function onSearch(val){currentSearch=val;renderFoodList(val);}
@@ -724,19 +779,60 @@ function renderMealGrid(){
         const f=FOODS.find(x=>x.id===entry.foodId);if(!f)return'';
         const mc=calcMacros(f,entry.amount);
         
-        return`<div class="placed-item"><div class="pi-name-row"><span class="pi-name">${f.name}</span><span class="pi-rm" data-date="${date}" data-meal="${meal}" data-idx="${idx}">×</span></div><div class="pi-kcal-row"><span class="pi-kcal-val">${mc.cal}</span> kcal</div><div class="pi-cpf-row"><span class="pi-cpf-item">C <span class="pi-cpf-val">${mc.carb}g</span></span><span class="pi-cpf-item">P <span class="pi-cpf-val">${mc.prot}g</span></span><span class="pi-cpf-item">F <span class="pi-cpf-val">${mc.fat}g</span></span></div><div class="pi-amt-row"><input class="pi-amt" type="number" min="1" step="5" value="${entry.amount}" data-date="${date}" data-meal="${meal}" data-idx="${idx}"/><span class="pi-unit">g</span></div></div>`;
+        return`<div class="placed-item" draggable="true" title="Drag to move · Double-click to edit macros" data-pfrom-date="${date}" data-pfrom-meal="${meal}" data-pfrom-idx="${idx}"><div class="pi-name-row"><span class="pi-name">${f.name}</span><span class="pi-rm" data-date="${date}" data-meal="${meal}" data-idx="${idx}">×</span></div><div class="pi-kcal-row"><span class="pi-kcal-val">${mc.cal}</span> kcal</div><div class="pi-cpf-row"><span class="pi-cpf-item">C <span class="pi-cpf-val">${mc.carb}g</span></span><span class="pi-cpf-item">P <span class="pi-cpf-val">${mc.prot}g</span></span><span class="pi-cpf-item">F <span class="pi-cpf-val">${mc.fat}g</span></span></div><div class="pi-amt-row"><input class="pi-amt" type="number" min="1" step="5" value="${entry.amount}" data-date="${date}" data-meal="${meal}" data-idx="${idx}"/><span class="pi-unit">g</span></div></div>`;
       }).join('');
       return`<div class="meal-col"><div class="meal-head">${meal}</div><div class="meal-cell" data-date="${date}" data-meal="${meal}">${items}${entries.length===0?'<div class="drop-hint">drop food here</div>':''}</div></div>`;
     }).join('')}</div></div>`;
   }).join('');
+  // Placed-item drag start + double-click to edit food
+  document.querySelectorAll('.placed-item[draggable]').forEach(item=>{
+    item.addEventListener('dragstart',e=>{
+      dragPlaced={
+        date:item.dataset.pfromDate,
+        meal:item.dataset.pfromMeal,
+        idx:parseInt(item.dataset.pfromIdx)
+      };
+      dragFood=null;
+      item.classList.add('dragging-placed');
+      e.dataTransfer.effectAllowed='move';
+    });
+    item.addEventListener('dragend',()=>item.classList.remove('dragging-placed'));
+    item.addEventListener('dblclick',e=>{
+      // find the foodId from the entry
+      const date=item.dataset.pfromDate;
+      const meal=item.dataset.pfromMeal;
+      const idx=parseInt(item.dataset.pfromIdx);
+      const entry=mealData[date]&&mealData[date][meal]&&mealData[date][meal][idx];
+      if(entry){editFood(entry.foodId);}
+    });
+  });
+
   document.querySelectorAll('.meal-cell').forEach(cell=>{
     cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('drag-over');});
     cell.addEventListener('dragleave',()=>cell.classList.remove('drag-over'));
     cell.addEventListener('drop',e=>{
-      e.preventDefault();cell.classList.remove('drag-over');if(!dragFood)return;
+      e.preventDefault();cell.classList.remove('drag-over');
+      const toDate=cell.dataset.date;
+      const toMeal=cell.dataset.meal;
+
+      // Moving an existing placed item
+      if(dragPlaced){
+        const{date:fromDate,meal:fromMeal,idx:fromIdx}=dragPlaced;
+        // Don't drop on same cell
+        if(fromDate===toDate&&fromMeal===toMeal){dragPlaced=null;return;}
+        const entry=mealData[fromDate][fromMeal][fromIdx];
+        mealData[fromDate][fromMeal].splice(fromIdx,1);
+        mealData[toDate][toMeal].push(entry);
+        dragPlaced=null;
+        saveLocal();renderAll();
+        return;
+      }
+
+      // Adding new food from library
+      if(!dragFood)return;
       const food=FOODS.find(f=>f.id===dragFood);if(!food)return;
       const startAmt=recentAmounts[food.id]||food.default;
-      mealData[cell.dataset.date][cell.dataset.meal].push({foodId:food.id,amount:startAmt});
+      mealData[toDate][toMeal].push({foodId:food.id,amount:startAmt});
       usageCount[food.id]=(usageCount[food.id]||0)+1;
       dragFood=null;saveLocal();renderAll();
     });
