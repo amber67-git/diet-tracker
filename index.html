@@ -233,6 +233,41 @@
   .data-msg{font-size:11px;color:#0F6E56;opacity:0;transition:opacity .3s;margin-left:4px}
   .data-msg.show{opacity:1}
   .install-tip-close{margin-left:auto;cursor:pointer;color:var(--color-text-tertiary);font-size:16px}
+  .profile-section{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 18px;margin-bottom:14px}
+  .profile-section-title{font-size:12px;font-weight:600;color:var(--color-text-primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .profile-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .profile-row:last-child{margin-bottom:0}
+  .profile-label{font-size:12px;color:var(--color-text-secondary);min-width:120px;flex-shrink:0}
+  .profile-input{flex:1;min-width:0;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 10px;background:var(--color-background-primary);color:var(--color-text-primary)}
+  .profile-select{flex:1;min-width:0;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 10px;background:var(--color-background-primary);color:var(--color-text-primary)}
+  .profile-unit{font-size:12px;color:var(--color-text-tertiary);flex-shrink:0}
+  .profile-hint{font-size:11px;color:var(--color-text-tertiary);padding-left:130px;margin-top:-6px;margin-bottom:10px}
+  .profile-bmr-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:4px}
+  .profile-bmr-row{display:flex;gap:16px;flex-wrap:wrap}
+  .profile-bmr-item{text-align:center}
+  .profile-bmr-val{font-size:16px;font-weight:600;color:var(--color-text-primary)}
+  .profile-bmr-lbl{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+  .profile-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:7px 16px;border-radius:var(--border-radius-md);cursor:pointer;transition:background .12s;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)}
+  .profile-btn:hover{background:var(--color-background-secondary)}
+  .profile-btn.primary{background:#E6F1FB;border-color:#185FA5;color:#185FA5}
+  .profile-btn.primary:hover{background:#B5D4F4}
+  .profile-btn.danger{background:#FDECEA;border-color:#A32D2D;color:#A32D2D}
+  .profile-save-msg{font-size:11px;color:#0F6E56;opacity:0;transition:opacity .3s;margin-left:8px}
+  .profile-save-msg.show{opacity:1}
+  .ratio-row{display:grid;grid-template-columns:52px 1fr 16px 44px;align-items:center;gap:6px;margin-bottom:8px}
+  .ratio-name{font-size:12px;font-weight:500}
+  .ratio-input{font-size:13px;font-weight:500;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary);text-align:right;width:100%}
+  .ratio-pct{font-size:12px;color:var(--color-text-tertiary)}
+  .ratio-grams{font-size:11px;color:var(--color-text-tertiary);text-align:right}
+  .ratio-total{font-size:11px;margin-top:2px;text-align:right}
+  .ratio-warn{color:#A32D2D}.ratio-ok{color:#0F6E56}
+  .toggle-wrap{display:flex;align-items:center;gap:10px}
+  .toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--color-border-secondary);border-radius:99px;transition:.2s}
+  .toggle-slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+  .toggle input:checked+.toggle-slider{background:#1D9E75}
+  .toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
   .calc-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-top:8px}
   .calc-head{padding:9px 13px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;justify-content:space-between;align-items:center}
   .calc-body{padding:12px 13px;display:flex;flex-direction:column;gap:8px}
@@ -272,48 +307,14 @@
     <span class="install-tip-close" onclick="document.getElementById('installTip').style.display='none'">×</span>
   </div>
 
-  <div class="goals-panel">
-    <div class="section-label">Daily targets</div>
-    <div class="goals-top">
-      <div class="cal-block">
-        <div class="cal-row">
-          <span class="cal-label">Calorie goal</span>
-          <input class="cal-input" type="number" id="calGoal" min="500" max="5000" step="50" value="2000"/>
-          <span class="cal-unit">kcal</span>
-        </div>
-        <div class="today-note"><i class="ti ti-calendar" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Progress tracks today's meals only</div>
-      </div>
-      <div class="ratio-block">
-        <div class="ratio-head">C / P / F ratio — type percentages (must total 100%)</div>
-        <div class="ratio-row">
-          <span class="ratio-name" style="color:#185FA5">Carbs</span>
-          <input class="ratio-input" type="number" id="rCarb" min="0" max="100" step="1" value="50"/>
-          <span class="ratio-pct">%</span>
-          <span class="ratio-grams" id="gCarb">250g</span>
-        </div>
-        <div class="ratio-row">
-          <span class="ratio-name" style="color:#0F6E56">Protein</span>
-          <input class="ratio-input" type="number" id="rProt" min="0" max="100" step="1" value="30"/>
-          <span class="ratio-pct">%</span>
-          <span class="ratio-grams" id="gProt">150g</span>
-        </div>
-        <div class="ratio-row">
-          <span class="ratio-name" style="color:#854F0B">Fat</span>
-          <input class="ratio-input" type="number" id="rFat" min="0" max="100" step="1" value="20"/>
-          <span class="ratio-pct">%</span>
-          <span class="ratio-grams" id="gFat">44g</span>
-        </div>
-        <div class="ratio-total" id="ratioTotal"></div>
-      </div>
-    </div>
-    <div class="save-row">
-      <button class="save-btn" id="saveBtn"><i class="ti ti-device-floppy" style="font-size:15px" aria-hidden="true"></i> Save settings</button>
-      <span id="autoSaveIndicator" style="font-size:11px;color:#0F6E56;margin-left:6px;transition:opacity .3s"></span>
-      <span class="save-msg" id="saveMsg"><i class="ti ti-check" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Saved — bookmark this URL</span>
-      <div class="url-box" id="urlBox"></div>
-    </div>
-  </div>
+  
 
+  <!-- Hidden inputs for goals compatibility -->
+  <input type="hidden" id="calGoal" value="2000"/>
+  <input type="hidden" id="rCarb" value="50"/>
+  <input type="hidden" id="rProt" value="30"/>
+  <input type="hidden" id="rFat" value="20"/>
+  <div id="greetingBar" style="font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px"></div>
   <div class="macro-bar" id="macroBar"></div>
 
   <div class="top-controls">
@@ -325,6 +326,7 @@
     <div class="tabs">
       <div class="tab active" id="tabMeals" onclick="switchTab('meals')"><i class="ti ti-calendar-week" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Meal log</div>
       <div class="tab" id="tabWeek" onclick="switchTab('week')"><i class="ti ti-chart-bar" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Week summary</div>
+      <div class="tab" id="tabProfile" onclick="switchTab('profile')"><i class="ti ti-user" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Profile</div>
     </div>
   </div>
 
@@ -379,6 +381,10 @@
 
   <div id="viewWeek" style="display:none">
     <div id="weekPanel"></div>
+  </div>
+
+  <div id="viewProfile" style="display:none">
+    <div id="profilePanel"></div>
   </div>
 
 </div>
@@ -452,7 +458,7 @@ let FOODS=[
   {id:65,name:'Mozzarella',cat:'dairy',unit:'g',default:50,per100:{cal:280,carb:2.2,prot:28,fat:17}},
 ];
 let nextId=200;
-const MEALS=['Breakfast','Lunch','Dinner'];
+var MEALS=['Breakfast','Lunch','Dinner'];
 const DAYS_SHORT=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 let mealData={};
 let dragFood=null;
@@ -583,10 +589,10 @@ function shiftWeek(dir){weekOffset+=dir;updateWeekNav();renderAll();}
 function loadFromURL(){
   try{
     const p=new URLSearchParams(window.location.search);
-    if(p.get('cal'))document.getElementById('calGoal').value=p.get('cal');
-    if(p.get('c'))document.getElementById('rCarb').value=p.get('c');
-    if(p.get('p'))document.getElementById('rProt').value=p.get('p');
-    if(p.get('f'))document.getElementById('rFat').value=p.get('f');
+    if(p.get('cal')){var e=document.getElementById('calGoal');if(e)e.value=p.get('cal');}
+    if(p.get('c')){var e=document.getElementById('rCarb');if(e)e.value=p.get('c');}
+    if(p.get('p')){var e=document.getElementById('rProt');if(e)e.value=p.get('p');}
+    if(p.get('f')){var e=document.getElementById('rFat');if(e)e.value=p.get('f');}
   }catch(e){}
 }
 function saveToURL(){
@@ -605,14 +611,18 @@ function saveToURL(){
     setTimeout(()=>msg.classList.remove('show'),3000);
   }catch(e){}
 }
-document.getElementById('saveBtn').addEventListener('click',saveToURL);
+var saveBtnEl=document.getElementById('saveBtn');
+if(saveBtnEl) saveBtnEl.addEventListener('click',saveToURL);
 function switchTab(tab){
   currentTab=tab;
   document.getElementById('tabMeals').className='tab'+(tab==='meals'?' active':'');
   document.getElementById('tabWeek').className='tab'+(tab==='week'?' active':'');
+  document.getElementById('tabProfile').className='tab'+(tab==='profile'?' active':'');
   document.getElementById('viewMeals').style.display=tab==='meals'?'':'none';
   document.getElementById('viewWeek').style.display=tab==='week'?'':'none';
-  if(tab==='week')renderWeek();
+  document.getElementById('viewProfile').style.display=tab==='profile'?'':'none';
+  if(tab==='week') renderWeek();
+  if(tab==='profile') renderProfile();
 }
 function getGoals(){
   const cal=Math.max(500,parseInt(document.getElementById('calGoal').value)||2000);
@@ -1073,11 +1083,209 @@ function toggleDay(date){
   renderMealGrid();
 }
 
-function renderAll(){renderMacroBar();renderFoodList(currentSearch);renderMealGrid();if(currentTab==='week')renderWeek();}
-document.getElementById('calGoal').addEventListener('input',renderAll);
-['rCarb','rProt','rFat'].forEach(id=>document.getElementById(id).addEventListener('input',renderAll));
+// ── Profile state ──
+var profile={
+  name:'', height:'', weight:'', age:'', gender:'male',
+  activity:'moderate', goalType:'maintain', goalWeight:'', weeklyChange:'0.5',
+  mealNames:['Breakfast','Lunch','Dinner'], darkMode:false
+};
+
+function saveProfile(){
+  profile.name=(document.getElementById('pName')||{}).value||profile.name;
+  profile.height=(document.getElementById('pHeight')||{}).value||profile.height;
+  profile.weight=(document.getElementById('pWeight')||{}).value||profile.weight;
+  profile.age=(document.getElementById('pAge')||{}).value||profile.age;
+  profile.gender=(document.getElementById('pGender')||{}).value||profile.gender;
+  profile.activity=(document.getElementById('pActivity')||{}).value||profile.activity;
+  profile.goalType=(document.getElementById('pGoalType')||{}).value||profile.goalType;
+  profile.goalWeight=(document.getElementById('pGoalWeight')||{}).value||profile.goalWeight;
+  profile.weeklyChange=(document.getElementById('pWeeklyChange')||{}).value||profile.weeklyChange;
+  ['0','1','2'].forEach(function(i){
+    var el=document.getElementById('pMeal'+i);
+    if(el&&el.value.trim()) profile.mealNames[i]=el.value.trim();
+  });
+  // Save calorie goal + ratios
+  var calEl=document.getElementById('pCalGoal');
+  var rCarbEl=document.getElementById('pRCarb');
+  var rProtEl=document.getElementById('pRProt');
+  var rFatEl=document.getElementById('pRFat');
+  if(calEl){
+    var hCal=document.getElementById('calGoal');if(hCal) hCal.value=calEl.value;
+  }
+  if(rCarbEl){var hC=document.getElementById('rCarb');if(hC) hC.value=rCarbEl.value;}
+  if(rProtEl){var hP=document.getElementById('rProt');if(hP) hP.value=rProtEl.value;}
+  if(rFatEl){var hF=document.getElementById('rFat');if(hF) hF.value=rFatEl.value;}
+  // Update MEALS from profile
+  MEALS=profile.mealNames.map(function(n){return n||'Meal';});
+  // Apply dark mode
+  profile.darkMode=(document.getElementById('pDarkMode')||{}).checked||false;
+  applyDarkMode();
+  localStorage.setItem('dmt_profile',JSON.stringify(profile));
+  // Save URL params for calorie/ratio
+  if(calEl&&rCarbEl&&rProtEl&&rFatEl){
+    var base=window.location.href.split('?')[0];
+    var url=base+'?cal='+calEl.value+'&c='+rCarbEl.value+'&p='+rProtEl.value+'&f='+rFatEl.value;
+    window.history.replaceState({},'',url);
+  }
+  var msg=document.getElementById('profileSaveMsg');
+  if(msg){msg.classList.add('show');setTimeout(function(){msg.classList.remove('show');},2500);}
+  updateGreeting();
+  renderAll();
+}
+
+function loadProfile(){
+  try{
+    var saved=localStorage.getItem('dmt_profile');
+    if(saved) profile=Object.assign(profile,JSON.parse(saved));
+  }catch(e){}
+}
+
+function applyDarkMode(){
+  // Toggle will be handled by CSS prefers-color-scheme, manual override via class
+  if(profile.darkMode){
+    document.documentElement.setAttribute('data-theme','dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+function calcBMR(){
+  var h=parseFloat(profile.height);
+  var w=parseFloat(profile.weight);
+  var a=parseInt(profile.age);
+  if(!h||!w||!a) return null;
+  // Mifflin-St Jeor
+  var bmr=profile.gender==='male'?(10*w)+(6.25*h)-(5*a)+5:(10*w)+(6.25*h)-(5*a)-161;
+  var actMult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,veryactive:1.9};
+  var tdee=Math.round(bmr*(actMult[profile.activity]||1.55));
+  var goalAdj={lose:-500,maintain:0,gain:300};
+  var target=tdee+(goalAdj[profile.goalType]||0);
+  // Weekly change override
+  if(profile.goalType!=='maintain'&&profile.weeklyChange){
+    var wc=parseFloat(profile.weeklyChange);
+    target=tdee+(profile.goalType==='lose'?-1:1)*Math.round(wc*1000/7);
+  }
+  return{bmr:Math.round(bmr),tdee:tdee,target:Math.round(target)};
+}
+
+function updateBMRDisplay(){
+  var calc=calcBMR();
+  var box=document.getElementById('bmrBox');
+  if(!box) return;
+  if(!calc){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML='<div class="profile-bmr-row">'
+    +'<div class="profile-bmr-item"><div class="profile-bmr-val">'+calc.bmr+'</div><div class="profile-bmr-lbl">BMR (kcal)</div></div>'
+    +'<div class="profile-bmr-item"><div class="profile-bmr-val">'+calc.tdee+'</div><div class="profile-bmr-lbl">TDEE (kcal)</div></div>'
+    +'<div class="profile-bmr-item"><div class="profile-bmr-val" style="color:#1D9E75">'+calc.target+'</div><div class="profile-bmr-lbl">Suggested goal</div></div>'
+    +'</div>'
+    +'<button class="profile-btn primary" style="margin-top:10px;font-size:11px;padding:5px 12px" onclick="applyBMR('+calc.target+')">Use '+calc.target+' kcal as my goal</button>';
+}
+
+function applyBMR(val){
+  var el=document.getElementById('pCalGoal');
+  if(el){el.value=val;updateRatioGrams();}
+}
+
+function updateRatioGrams(){
+  var cal=parseInt((document.getElementById('pCalGoal')||{}).value)||0;
+  var rc=parseInt((document.getElementById('pRCarb')||{}).value)||0;
+  var rp=parseInt((document.getElementById('pRProt')||{}).value)||0;
+  var rf=parseInt((document.getElementById('pRFat')||{}).value)||0;
+  var total=rc+rp+rf;
+  var valid=total===100;
+  var el=document.getElementById('pRatioTotal');
+  if(el){
+    el.textContent=valid?'Total: 100% — looks good':'Total: '+total+'% — must equal 100%';
+    el.className='ratio-total '+(valid?'ratio-ok':'ratio-warn');
+  }
+  var gc=document.getElementById('pGCarb');var gp=document.getElementById('pGProt');var gf=document.getElementById('pGFat');
+  if(gc) gc.textContent=valid?Math.round(cal*(rc/100)/4)+'g':'—';
+  if(gp) gp.textContent=valid?Math.round(cal*(rp/100)/4)+'g':'—';
+  if(gf) gf.textContent=valid?Math.round(cal*(rf/100)/9)+'g':'—';
+  updateBMRDisplay();
+}
+
+function updateGreeting(){
+  var el=document.getElementById('greetingBar');
+  if(!el) return;
+  var h=new Date().getHours();
+  var greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  if(h>=12&&h<17) greet='Good afternoon';
+  else if(h>=17) greet='Good evening';
+  else greet='Good morning';
+  el.textContent=profile.name?(greet+', '+profile.name+' 👋'):'';
+}
+
+function renderProfile(){
+  var cal=document.getElementById('calGoal')?document.getElementById('calGoal').value:'2000';
+  var rc=document.getElementById('rCarb')?document.getElementById('rCarb').value:'50';
+  var rp=document.getElementById('rProt')?document.getElementById('rProt').value:'30';
+  var rf=document.getElementById('rFat')?document.getElementById('rFat').value:'20';
+  var h='';
+
+  // ── Basic ──
+  h+='<div class="profile-section">';
+  h+='<div class="profile-section-title">Basic info</div>';
+  h+='<div class="profile-row"><span class="profile-label">Name / Nickname</span><input class="profile-input" id="pName" type="text" placeholder="e.g. Amber" value="'+profile.name+'"/></div>';
+  h+='</div>';
+
+  // ── Nutrition goals ──
+  h+='<div class="profile-section">';
+  h+='<div class="profile-section-title">Nutrition goals</div>';
+  h+='<div class="profile-row"><span class="profile-label">Calorie goal</span><input class="profile-input" id="pCalGoal" type="number" min="500" max="5000" step="50" value="'+cal+'" oninput="updateRatioGrams()"/><span class="profile-unit">kcal / day</span></div>';
+  h+='<div style="margin-top:6px;margin-bottom:6px"><div class="ratio-row"><span class="ratio-name" style="color:#185FA5">Carbs</span><input class="ratio-input" id="pRCarb" type="number" min="0" max="100" value="'+rc+'" oninput="updateRatioGrams()"/><span class="ratio-pct">%</span><span class="ratio-grams" id="pGCarb"></span></div><div class="ratio-row"><span class="ratio-name" style="color:#1D9E75">Protein</span><input class="ratio-input" id="pRProt" type="number" min="0" max="100" value="'+rp+'" oninput="updateRatioGrams()"/><span class="ratio-pct">%</span><span class="ratio-grams" id="pGProt"></span></div><div class="ratio-row"><span class="ratio-name" style="color:#EF9F27">Fat</span><input class="ratio-input" id="pRFat" type="number" min="0" max="100" value="'+rf+'" oninput="updateRatioGrams()"/><span class="ratio-pct">%</span><span class="ratio-grams" id="pGFat"></span></div><div class="ratio-total" id="pRatioTotal"></div></div>';
+  h+='</div>';
+
+  // ── Body info ──
+  h+='<div class="profile-section">';
+  h+='<div class="profile-section-title">Body info — auto-calculates calorie goal</div>';
+  h+='<div class="profile-row"><span class="profile-label">Height</span><input class="profile-input" id="pHeight" type="number" min="100" max="250" placeholder="e.g. 165" value="'+profile.height+'" oninput="updateBMRDisplay()"/><span class="profile-unit">cm</span></div>';
+  h+='<div class="profile-row"><span class="profile-label">Weight</span><input class="profile-input" id="pWeight" type="number" min="30" max="300" placeholder="e.g. 60" value="'+profile.weight+'" oninput="updateBMRDisplay()"/><span class="profile-unit">kg</span></div>';
+  h+='<div class="profile-row"><span class="profile-label">Age</span><input class="profile-input" id="pAge" type="number" min="10" max="100" placeholder="e.g. 28" value="'+profile.age+'" oninput="updateBMRDisplay()"/><span class="profile-unit">years</span></div>';
+  h+='<div class="profile-row"><span class="profile-label">Gender</span><select class="profile-select" id="pGender" onchange="updateBMRDisplay()"><option value="female"'+(profile.gender==='female'?' selected':'')+'>Female</option><option value="male"'+(profile.gender==='male'?' selected':'')+'>Male</option></select></div>';
+  h+='<div class="profile-row"><span class="profile-label">Activity level</span><select class="profile-select" id="pActivity" onchange="updateBMRDisplay()"><option value="sedentary"'+(profile.activity==='sedentary'?' selected':'')+'>Sedentary (desk job, no exercise)</option><option value="light"'+(profile.activity==='light'?' selected':'')+'>Light (1-3x/week)</option><option value="moderate"'+(profile.activity==='moderate'?' selected':'')+'>Moderate (3-5x/week)</option><option value="active"'+(profile.activity==='active'?' selected':'')+'>Active (6-7x/week)</option><option value="veryactive"'+(profile.activity==='veryactive'?' selected':'')+'>Very active (athlete)</option></select></div>';
+  h+='<div class="profile-bmr-box" id="bmrBox" style="display:none"></div>';
+  h+='</div>';
+
+  // ── Goal setting ──
+  h+='<div class="profile-section">';
+  h+='<div class="profile-section-title">Goal setting</div>';
+  h+='<div class="profile-row"><span class="profile-label">Goal type</span><select class="profile-select" id="pGoalType" onchange="updateBMRDisplay()"><option value="lose"'+(profile.goalType==='lose'?' selected':'')+'>Lose weight</option><option value="maintain"'+(profile.goalType==='maintain'?' selected':'')+'>Maintain weight</option><option value="gain"'+(profile.goalType==='gain'?' selected':'')+'>Gain weight</option></select></div>';
+  h+='<div class="profile-row"><span class="profile-label">Goal weight</span><input class="profile-input" id="pGoalWeight" type="number" min="30" max="300" placeholder="e.g. 55" value="'+profile.goalWeight+'"/><span class="profile-unit">kg</span></div>';
+  h+='<div class="profile-row"><span class="profile-label">Weekly change</span><select class="profile-select" id="pWeeklyChange" onchange="updateBMRDisplay()"><option value="0.25"'+(profile.weeklyChange==='0.25'?' selected':'')+'>0.25 kg/week (gentle)</option><option value="0.5"'+(profile.weeklyChange==='0.5'?' selected':'')+'>0.5 kg/week (recommended)</option><option value="0.75"'+(profile.weeklyChange==='0.75'?' selected':'')+'>0.75 kg/week</option><option value="1"'+(profile.weeklyChange==='1'?' selected':'')+'>1 kg/week (aggressive)</option></select></div>';
+  h+='</div>';
+
+  // ── App settings ──
+  h+='<div class="profile-section">';
+  h+='<div class="profile-section-title">App settings</div>';
+  h+='<div class="profile-row"><span class="profile-label">Dark mode</span><label class="toggle"><input type="checkbox" id="pDarkMode"'+(profile.darkMode?' checked':'')+'/><span class="toggle-slider"></span></label></div>';
+  h+='<div class="profile-row" style="align-items:flex-start"><span class="profile-label" style="padding-top:6px">Meal names</span><div style="display:flex;flex-direction:column;gap:6px;flex:1">';
+  ['Breakfast','Lunch','Dinner'].forEach(function(def,i){
+    h+='<input class="profile-input" id="pMeal'+i+'" type="text" placeholder="'+def+'" value="'+(profile.mealNames[i]||def)+'"/>';
+  });
+  h+='</div></div>';
+  h+='<div class="profile-row"><span class="profile-label">Data backup</span>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="profile-btn primary" onclick="exportData()">Export backup</button><label class="profile-btn" style="cursor:pointer">Import backup<input type="file" accept=".json" onchange="importData(event)" style="display:none"/></label></div></div>';
+  h+='</div>';
+
+  // ── Save ──
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">';
+  h+='<button class="profile-btn primary" onclick="saveProfile()" style="font-size:13px;padding:8px 20px">Save profile</button>';
+  h+='<span class="profile-save-msg" id="profileSaveMsg">Saved!</span>';
+  h+='</div>';
+
+  document.getElementById('profilePanel').innerHTML=h;
+  updateRatioGrams();
+  updateBMRDisplay();
+}
+
+function renderAll(){updateGreeting();renderMacroBar();renderFoodList(currentSearch);renderMealGrid();if(currentTab==='week')renderWeek();}
+// Goals now managed in Profile tab - hidden inputs don't need live listeners
+// Changes apply on Profile save
 const ro=new ResizeObserver(syncLibraryHeight);
-ro.observe(document.getElementById('mealGrid'));
+var mgEl=document.getElementById('mealGrid');
+if(mgEl) ro.observe(mgEl);
 // Capitalize all food names + migrate categories on load
 FOODS.forEach(f=>{
   if(f.name) f.name=f.name.charAt(0).toUpperCase()+f.name.slice(1);
@@ -1089,6 +1297,7 @@ FOODS.forEach(f=>{
   if(detected&&detected!=='other') f.cat=detected;
 });
 loadLocal();
+loadProfile();
 // Also migrate any saved custom foods
 setTimeout(()=>{
   FOODS.forEach(f=>{
