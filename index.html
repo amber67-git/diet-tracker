@@ -178,6 +178,27 @@
   .wc-val{font-size:20px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px}
   .wc-sub{font-size:11px;color:var(--color-text-tertiary)}
   .week-day-grid{display:flex;flex-direction:column;gap:8px}
+  .chart-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:16px}
+  .chart-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+  .chart-subtitle{font-size:11px;color:var(--color-text-tertiary);margin-bottom:16px}
+  .chart-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .chart-tab{font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .12s}
+  .chart-tab.active{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary)}
+  .bar-chart{display:flex;align-items:flex-end;gap:6px;height:140px;padding-bottom:24px;position:relative;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .bar-chart-y{position:absolute;left:0;top:0;bottom:24px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+  .bar-chart-y-label{font-size:9px;color:var(--color-text-tertiary);line-height:1}
+  .bar-chart-y-lines{position:absolute;left:0;right:0;top:0;bottom:24px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+  .bar-chart-y-line{border-top:0.5px dashed var(--color-border-tertiary);width:100%}
+  .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+  .bar-group-bars{display:flex;align-items:flex-end;gap:2px;width:100%;justify-content:center}
+  .bar{border-radius:3px 3px 0 0;min-width:8px;max-width:18px;flex:1;transition:height .3s;cursor:pointer;position:relative}
+  .bar:hover{opacity:.8}
+  .bar-tooltip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);font-size:10px;padding:3px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10}
+  .bar:hover .bar-tooltip{opacity:1}
+  .bar-group-label{font-size:9px;color:var(--color-text-tertiary);margin-top:4px;text-align:center}
+  .bar-legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+  .bar-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+  .bar-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
   .wd-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px}
   .wd-card.today{border-color:#1D9E75;border-width:1.5px}
   .wd-card.empty{opacity:0.45}
@@ -319,15 +340,15 @@
           <div class="aff-row"><span class="aff-label">Name</span><input class="aff-input" id="affName" type="text" placeholder="e.g. Ham" oninput="onFoodNameInput(this.value)"/></div>
           <div class="aff-row"><span class="aff-label">Category</span>
             <select class="aff-select" id="affCat">
-              <option value="meat">🥩 Meat &amp; Fish</option>
-              <option value="grains">🍚 Grains &amp; Carbs</option>
-              <option value="dairy">🥛 Eggs &amp; Dairy</option>
-              <option value="vegetables">🥦 Vegetables</option>
-              <option value="fruits">🍎 Fruits</option>
-              <option value="drinks">🥤 Drinks</option>
-              <option value="snacks">🍫 Snacks</option>
-              <option value="meals">🍳 Meals &amp; Dishes</option>
-              <option value="other">🫙 Other</option>
+              <option value="meat">Meat &amp; Fish</option>
+              <option value="grains">Grains &amp; Carbs</option>
+              <option value="dairy">Eggs &amp; Dairy</option>
+              <option value="vegetables">Vegetables</option>
+              <option value="fruits">Fruits</option>
+              <option value="drinks">Drinks</option>
+              <option value="snacks">Snacks</option>
+              <option value="meals">Meals &amp; Dishes</option>
+              <option value="other">Other</option>
             </select>
           </div>
           <div style="font-size:11px;color:var(--color-text-tertiary);margin:6px 0 2px;padding-left:62px">Enter total amount eaten — auto-calculates per 100g</div>
@@ -643,15 +664,87 @@ function renderWeek(){
 
   var html='';
 
-  // Top 4 summary cards
-  html+='<div class="week-summary-grid" style="margin-bottom:20px">';
+  // ── Bar chart ──
+  var chartMetric=window._chartMetric||'calories';
+  var chartColors={calories:'#D85A30',carbs:'#378ADD',protein:'#1D9E75',fat:'#EF9F27'};
+  var chartLabel={calories:'Calories (kcal)',carbs:'Carbs (g)',protein:'Protein (g)',fat:'Fat (g)'};
+  var chartGoal={calories:g.cal,carbs:g.carb,protein:g.prot,fat:g.fat};
+  var vals=dates.map(function(d,i){
+    var t=totals[i];
+    if(chartMetric==='calories') return t.cal;
+    if(chartMetric==='carbs') return t.carb;
+    if(chartMetric==='protein') return t.prot;
+    if(chartMetric==='fat') return t.fat;
+    return 0;
+  });
+  var maxVal=Math.max.apply(null,vals.concat([chartGoal[chartMetric]||0,1]));
+  var color=chartColors[chartMetric];
+  var goalVal=chartGoal[chartMetric];
+
+  html+='<div class="chart-panel">';
+  html+='<div class="chart-title">Weekly '+chartLabel[chartMetric]+'</div>';
+  html+='<div class="chart-subtitle">'+DAYS_SHORT[0]+' '+dates[0]+' – '+DAYS_SHORT[6]+' '+dates[6]+'</div>';
+  // Metric tabs
+  html+='<div class="chart-tabs">';
+  var metricNames={calories:'Calories',carbs:'Carbs',protein:'Protein',fat:'Fat'};
+  ['calories','carbs','protein','fat'].forEach(function(m){
+    html+='<div class="chart-tab'+(m===chartMetric?' active':'')+'" data-metric="'+m+'">'+metricNames[m]+'</div>';
+  });
+  html+='</div>';
+
+  // Bar chart
+  html+='<div style="position:relative;padding-left:28px">';
+  // Y axis labels
+  html+='<div class="bar-chart-y">';
+  [100,75,50,25,0].forEach(function(p){
+    html+='<div class="bar-chart-y-label">'+Math.round(maxVal*p/100)+'</div>';
+  });
+  html+='</div>';
+  html+='<div class="bar-chart">';
+  // Y grid lines
+  html+='<div class="bar-chart-y-lines">';
+  [0,1,2,3,4].forEach(function(){html+='<div class="bar-chart-y-line"></div>';});
+  html+='</div>';
+
+  // Goal line
+  if(goalVal&&g.valid){
+    var goalPct=Math.min(100,goalVal/maxVal*100);
+    html+='<div style="position:absolute;left:0;right:0;bottom:calc(24px + '+goalPct+'%);border-top:1.5px dashed '+color+';opacity:.5;z-index:1;pointer-events:none"></div>';
+  }
+
+  dates.forEach(function(date,i){
+    var v=vals[i];
+    var pct=maxVal>0?Math.min(100,v/maxVal*100):0;
+    var isToday=date===today;
+    var over=goalVal&&v>goalVal;
+    var barColor=over?'#A32D2D':color;
+    html+='<div class="bar-group">';
+    html+='<div class="bar-group-bars">';
+    html+='<div class="bar" style="height:'+pct+'%;background:'+(v>0?barColor:'var(--color-border-tertiary)')+';'+(isToday?'outline:1.5px solid '+color+';outline-offset:1px;':'')+'">';
+    if(v>0) html+='<div class="bar-tooltip">'+v+(chartMetric==='calories'?' kcal':'g')+'</div>';
+    html+='</div>';
+    html+='</div>';
+    html+='<div class="bar-group-label" style="'+(isToday?'font-weight:600;color:var(--color-text-primary)':'')+'">'+DAYS_SHORT[i]+'</div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+
+  // Legend
+  html+='<div class="bar-legend">';
+  html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:'+color+'"></div>'+chartLabel[chartMetric]+'</div>';
+  if(goalVal&&g.valid) html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:transparent;border:1.5px dashed '+color+'"></div>Daily goal ('+goalVal+(chartMetric==='calories'?' kcal':'g')+')</div>';
+  html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:#A32D2D"></div>Over goal</div>';
+  html+='</div></div>';
+
+  // ── Summary cards ──
+  html+='<div class="week-summary-grid" style="margin-bottom:16px">';
   html+='<div class="week-card"><div class="wc-label">Total this week</div><div class="wc-val">'+totalCal.toLocaleString()+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">'+logged.length+' day'+(logged.length!==1?'s':'')+' logged</div></div>';
   html+='<div class="week-card"><div class="wc-label">Daily average</div><div class="wc-val">'+avgCal.toLocaleString()+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">goal: '+(g.cal||'--')+' kcal/day</div></div>';
   html+='<div class="week-card"><div class="wc-label">Weekly target</div><div class="wc-val">'+(weekTarget?weekTarget.toLocaleString():'--')+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">'+(weekTarget?weekPct+'% reached':'set goals first')+'</div></div>';
   html+='<div class="week-card"><div class="wc-label">Days on track</div><div class="wc-val" style="color:'+(onTrack>=5?'#0F6E56':onTrack>=3?'#854F0B':'#A32D2D')+'">'+(g.valid?onTrack+' / 7':'--')+'</div><div class="wc-sub">within calorie goal</div></div>';
   html+='</div>';
 
-  // Day cards
+  // ── Day cards ──
   html+='<div class="week-day-grid">';
   for(var i=0;i<dates.length;i++){
     var date=dates[i];
@@ -670,87 +763,75 @@ function renderWeek(){
       else if(calPct>=50) statusHtml='<span class="wd-status partial">Partial</span>';
       else statusHtml='<span class="wd-status partial">Low</span>';
     }
-
     html+='<div class="wd-card'+(isToday?' today':'')+(!has?' empty':'')+'">';
-
-    // Top row: day + date + kcal + status
     html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(has?'12px':'0')+'">';
     html+='<span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">'+DAYS_SHORT[i]+'</span>';
     html+='<span style="font-size:11px;color:var(--color-text-tertiary)">'+date+'</span>';
     if(isToday) html+='<span class="wd-today-badge">Today</span>';
     html+='<span style="margin-left:auto;font-size:13px;font-weight:500;color:var(--color-text-primary)">';
     if(has) html+=t.cal.toLocaleString()+' <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">/ '+(g.cal||'--')+' kcal</span>';
-    html+='</span>';
-    html+=statusHtml;
-    html+='</div>';
-
+    html+='</span>'+statusHtml+'</div>';
     if(has){
-      // Single box with 4 vertical sections: Cal | Carbs | Protein | Fat
       html+='<div style="display:flex;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">';
-
-      var sections=[
-        {label:'kcal', val:t.cal.toLocaleString(), goal:(g.cal||'--')+'', unit:'kcal', pct:calPct, color:'#D85A30'},
-        {label:'Carbs', val:t.carb+'g', goal:(g.carb||'--')+'g', unit:'', pct:carbPct, color:'#378ADD'},
-        {label:'Protein', val:t.prot+'g', goal:(g.prot||'--')+'g', unit:'', pct:protPct, color:'#1D9E75'},
-        {label:'Fat', val:t.fat+'g', goal:(g.fat||'--')+'g', unit:'', pct:fatPct, color:'#EF9F27'},
-      ];
-
-      for(var s=0;s<sections.length;s++){
-        var sec=sections[s];
-        var notLast=s<sections.length-1;
-        html+='<div style="flex:1;padding:10px 12px;'+(notLast?'border-right:0.5px solid var(--color-border-tertiary);':'')+'">';
-        html+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">'+sec.label+'</div>';
-        html+='<div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px">'+sec.val+'</div>';
-        html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">/ '+sec.goal+'</div>';
-        html+='<div style="height:4px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:3px">';
-        html+='<div style="width:'+sec.pct+'%;height:100%;border-radius:99px;background:'+sec.color+'"></div>';
+      var sections=[['kcal',t.cal.toLocaleString(),(g.cal||'--')+'',calPct,'#D85A30'],['Carbs',t.carb+'g',(g.carb||'--')+'g',carbPct,'#378ADD'],['Protein',t.prot+'g',(g.prot||'--')+'g',protPct,'#1D9E75'],['Fat',t.fat+'g',(g.fat||'--')+'g',fatPct,'#EF9F27']];
+      sections.forEach(function(s,si){
+        html+='<div style="flex:1;padding:10px 12px;'+(si<3?'border-right:0.5px solid var(--color-border-tertiary);':'')+'">';
+        html+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">'+s[0]+'</div>';
+        html+='<div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px">'+s[1]+'</div>';
+        html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">/ '+s[2]+'</div>';
+        html+='<div style="height:4px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:3px"><div style="width:'+s[3]+'%;height:100%;border-radius:99px;background:'+s[4]+'"></div></div>';
+        html+='<div style="font-size:10px;color:'+s[4]+';font-weight:500">'+s[3]+'%</div>';
         html+='</div>';
-        html+='<div style="font-size:10px;color:'+sec.color+';font-weight:500">'+sec.pct+'%</div>';
-        html+='</div>';
-      }
+      });
       html+='</div>';
     }
     html+='</div>';
   }
   html+='</div>';
 
-  // Category breakdown
-  const catCounts={};
-  const catCals={};
-  dates.forEach(date=>{
-    MEALS.forEach(meal=>{
-      (mealData[date]&&mealData[date][meal]?mealData[date][meal]:[]).forEach(entry=>{
-        const f=FOODS.find(x=>x.id===entry.foodId);if(!f)return;
-        const cat=f.cat||'other';
-        const mc=calcMacros(f,entry.amount);
+  // ── Category breakdown ──
+  var catCounts={};var catCals={};
+  dates.forEach(function(date){
+    MEALS.forEach(function(meal){
+      (mealData[date]&&mealData[date][meal]?mealData[date][meal]:[]).forEach(function(entry){
+        var f=FOODS.find(function(x){return x.id===entry.foodId;});if(!f)return;
+        var cat=f.cat||'other';
+        var mc=calcMacros(f,entry.amount);
         catCounts[cat]=(catCounts[cat]||0)+1;
         catCals[cat]=(catCals[cat]||0)+mc.cal;
       });
     });
   });
-  const catLabels={meat:'🥩 Meat & Fish',grains:'🍚 Grains & Carbs',dairy:'🥛 Eggs & Dairy',vegetables:'🥦 Vegetables',fruits:'🍎 Fruits',drinks:'🥤 Drinks',snacks:'🍫 Snacks',meals:'🍳 Meals & Dishes',other:'🫙 Other',protein:'🥩 Protein',carb:'🍚 Carbs',veggie:'🥦 Veggie',fat:'🫙 Fat',dish:'🍳 Dish',custom:'🫙 Other'};
-  const sortedCats=Object.keys(catCounts).sort((a,b)=>catCals[b]-catCals[a]);
-  const totalTrackedCal=Object.values(catCals).reduce((s,v)=>s+v,0);
+  var catLabels={meat:'Meat & Fish',grains:'Grains & Carbs',dairy:'Eggs & Dairy',vegetables:'Vegetables',fruits:'Fruits',drinks:'Drinks',snacks:'Snacks',meals:'Meals & Dishes',other:'Other',protein:'Protein',carb:'Carbs',veggie:'Veggie',fat:'Fat',dish:'Dish',custom:'Other'};
+  var barColors2={meat:'#A32D2D',grains:'#185FA5',dairy:'#854F0B',vegetables:'#3B6D11',fruits:'#9A5200',drinks:'#0B5D8A',snacks:'#6B3FA0',meals:'#534AB7',other:'#888780',protein:'#0F6E56',carb:'#185FA5',veggie:'#3B6D11',fat:'#993556',dish:'#534AB7'};
+  var sortedCats=Object.keys(catCounts).sort(function(a,b){return catCals[b]-catCals[a];});
+  var totalTrackedCal=Object.values(catCals).reduce(function(s,v){return s+v;},0);
   if(sortedCats.length>0){
     html+='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-top:16px">';
     html+='<div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:12px">Weekly breakdown by food type</div>';
-    sortedCats.forEach(cat=>{
-      const pct=totalTrackedCal?Math.round(catCals[cat]/totalTrackedCal*100):0;
-      const barColors={meat:'#A32D2D',grains:'#185FA5',dairy:'#854F0B',vegetables:'#3B6D11',fruits:'#9A5200',drinks:'#0B5D8A',snacks:'#6B3FA0',meals:'#534AB7',other:'#888780',protein:'#0F6E56',carb:'#185FA5',veggie:'#3B6D11',fat:'#993556',dish:'#534AB7'};
-      const color=barColors[cat]||'#888780';
+    sortedCats.forEach(function(cat){
+      var pct=totalTrackedCal?Math.round(catCals[cat]/totalTrackedCal*100):0;
+      var c2=barColors2[cat]||'#888780';
       html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
       html+='<span style="font-size:12px;min-width:130px;color:var(--color-text-secondary)">'+(catLabels[cat]||cat)+'</span>';
-      html+='<div style="flex:1;height:8px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden">';
-      html+='<div style="width:'+pct+'%;height:100%;border-radius:99px;background:'+color+'"></div>';
-      html+='</div>';
+      html+='<div style="flex:1;height:8px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden"><div style="width:'+pct+'%;height:100%;border-radius:99px;background:'+c2+'"></div></div>';
       html+='<span style="font-size:11px;color:var(--color-text-tertiary);min-width:60px;text-align:right">'+catCals[cat]+' kcal</span>';
-      html+='<span style="font-size:11px;font-weight:500;color:'+color+';min-width:30px;text-align:right">'+pct+'%</span>';
+      html+='<span style="font-size:11px;font-weight:500;color:'+c2+';min-width:30px;text-align:right">'+pct+'%</span>';
       html+='</div>';
     });
     html+='</div>';
   }
 
   document.getElementById('weekPanel').innerHTML=html;
+  // Chart tab click handlers
+  document.querySelectorAll('.chart-tab').forEach(function(tab){
+    tab.addEventListener('click',function(){setChartMetric(tab.dataset.metric);});
+  });
+}
+
+function setChartMetric(m){
+  window._chartMetric=m;
+  renderWeek();
 }
 
 function onSearch(val){currentSearch=val;renderFoodList(val);}
@@ -1020,9 +1101,27 @@ document.getElementById('calGoal').addEventListener('input',renderAll);
 ['rCarb','rProt','rFat'].forEach(id=>document.getElementById(id).addEventListener('input',renderAll));
 const ro=new ResizeObserver(syncLibraryHeight);
 ro.observe(document.getElementById('mealGrid'));
-// Capitalize all food names on load
-FOODS.forEach(f=>{if(f.name)f.name=f.name.charAt(0).toUpperCase()+f.name.slice(1);});
+// Capitalize all food names + migrate categories on load
+FOODS.forEach(f=>{
+  if(f.name) f.name=f.name.charAt(0).toUpperCase()+f.name.slice(1);
+  // Migrate old categories to new system
+  const oldToNew={protein:'meat',carb:'grains',veggie:'vegetables',fat:'other',dish:'meals',custom:'other'};
+  if(oldToNew[f.cat]) f.cat=oldToNew[f.cat];
+  // Re-detect using keyword rules for better accuracy
+  const detected=detectCategory(f.name);
+  if(detected&&detected!=='other') f.cat=detected;
+});
 loadLocal();
+// Also migrate any saved custom foods
+setTimeout(()=>{
+  FOODS.forEach(f=>{
+    if(f.name){
+      const oldToNew={protein:'meat',carb:'grains',veggie:'vegetables',fat:'other',dish:'meals',custom:'other'};
+      if(oldToNew[f.cat]) f.cat=oldToNew[f.cat];
+    }
+  });
+  saveLocal();
+},500);
 loadFromURL();
 updateWeekNav();
 ensureWeekData(getWeekDates(0));
