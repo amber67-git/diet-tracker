@@ -664,78 +664,6 @@ function renderWeek(){
 
   var html='';
 
-  // ── Bar chart ──
-  var chartMetric=window._chartMetric||'calories';
-  var chartColors={calories:'#D85A30',carbs:'#378ADD',protein:'#1D9E75',fat:'#EF9F27'};
-  var chartLabel={calories:'Calories (kcal)',carbs:'Carbs (g)',protein:'Protein (g)',fat:'Fat (g)'};
-  var chartGoal={calories:g.cal,carbs:g.carb,protein:g.prot,fat:g.fat};
-  var vals=dates.map(function(d,i){
-    var t=totals[i];
-    if(chartMetric==='calories') return t.cal;
-    if(chartMetric==='carbs') return t.carb;
-    if(chartMetric==='protein') return t.prot;
-    if(chartMetric==='fat') return t.fat;
-    return 0;
-  });
-  var maxVal=Math.max.apply(null,vals.concat([chartGoal[chartMetric]||0,1]));
-  var color=chartColors[chartMetric];
-  var goalVal=chartGoal[chartMetric];
-
-  html+='<div class="chart-panel">';
-  html+='<div class="chart-title">Weekly '+chartLabel[chartMetric]+'</div>';
-  html+='<div class="chart-subtitle">'+DAYS_SHORT[0]+' '+dates[0]+' – '+DAYS_SHORT[6]+' '+dates[6]+'</div>';
-  // Metric tabs
-  html+='<div class="chart-tabs">';
-  var metricNames={calories:'Calories',carbs:'Carbs',protein:'Protein',fat:'Fat'};
-  ['calories','carbs','protein','fat'].forEach(function(m){
-    html+='<div class="chart-tab'+(m===chartMetric?' active':'')+'" data-metric="'+m+'">'+metricNames[m]+'</div>';
-  });
-  html+='</div>';
-
-  // Bar chart
-  html+='<div style="position:relative;padding-left:28px">';
-  // Y axis labels
-  html+='<div class="bar-chart-y">';
-  [100,75,50,25,0].forEach(function(p){
-    html+='<div class="bar-chart-y-label">'+Math.round(maxVal*p/100)+'</div>';
-  });
-  html+='</div>';
-  html+='<div class="bar-chart">';
-  // Y grid lines
-  html+='<div class="bar-chart-y-lines">';
-  [0,1,2,3,4].forEach(function(){html+='<div class="bar-chart-y-line"></div>';});
-  html+='</div>';
-
-  // Goal line
-  if(goalVal&&g.valid){
-    var goalPct=Math.min(100,goalVal/maxVal*100);
-    html+='<div style="position:absolute;left:0;right:0;bottom:calc(24px + '+goalPct+'%);border-top:1.5px dashed '+color+';opacity:.5;z-index:1;pointer-events:none"></div>';
-  }
-
-  dates.forEach(function(date,i){
-    var v=vals[i];
-    var pct=maxVal>0?Math.min(100,v/maxVal*100):0;
-    var isToday=date===today;
-    var over=goalVal&&v>goalVal;
-    var barColor=over?'#A32D2D':color;
-    html+='<div class="bar-group">';
-    html+='<div class="bar-group-bars">';
-    html+='<div class="bar" style="height:'+pct+'%;background:'+(v>0?barColor:'var(--color-border-tertiary)')+';'+(isToday?'outline:1.5px solid '+color+';outline-offset:1px;':'')+'">';
-    if(v>0) html+='<div class="bar-tooltip">'+v+(chartMetric==='calories'?' kcal':'g')+'</div>';
-    html+='</div>';
-    html+='</div>';
-    html+='<div class="bar-group-label" style="'+(isToday?'font-weight:600;color:var(--color-text-primary)':'')+'">'+DAYS_SHORT[i]+'</div>';
-    html+='</div>';
-  });
-  html+='</div></div>';
-
-  // Legend
-  html+='<div class="bar-legend">';
-  html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:'+color+'"></div>'+chartLabel[chartMetric]+'</div>';
-  if(goalVal&&g.valid) html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:transparent;border:1.5px dashed '+color+'"></div>Daily goal ('+goalVal+(chartMetric==='calories'?' kcal':'g')+')</div>';
-  html+='<div class="bar-legend-item"><div class="bar-legend-dot" style="background:#A32D2D"></div>Over goal</div>';
-  html+='</div></div>';
-
   // ── Summary cards ──
   html+='<div class="week-summary-grid" style="margin-bottom:16px">';
   html+='<div class="week-card"><div class="wc-label">Total this week</div><div class="wc-val">'+totalCal.toLocaleString()+'<span style="font-size:13px;font-weight:400;color:var(--color-text-tertiary)"> kcal</span></div><div class="wc-sub">'+logged.length+' day'+(logged.length!==1?'s':'')+' logged</div></div>';
@@ -744,49 +672,99 @@ function renderWeek(){
   html+='<div class="week-card"><div class="wc-label">Days on track</div><div class="wc-val" style="color:'+(onTrack>=5?'#0F6E56':onTrack>=3?'#854F0B':'#A32D2D')+'">'+(g.valid?onTrack+' / 7':'--')+'</div><div class="wc-sub">within calorie goal</div></div>';
   html+='</div>';
 
-  // ── Day cards ──
-  html+='<div class="week-day-grid">';
-  for(var i=0;i<dates.length;i++){
-    var date=dates[i];
+  // ── Grouped bar chart (Cal + C + P + F per day) ──
+  var metrics=[
+    {key:'cal', label:'Calories', unit:'kcal', color:'#D85A30', goal:g.cal},
+    {key:'carb', label:'Carbs', unit:'g', color:'#378ADD', goal:g.carb},
+    {key:'prot', label:'Protein', unit:'g', color:'#1D9E75', goal:g.prot},
+    {key:'fat', label:'Fat', unit:'g', color:'#EF9F27', goal:g.fat},
+  ];
+
+  // Find max across all metrics normalized to % of goal for even display
+  // Use percentage of goal so all 4 fit in same scale
+  var useGoalPct=g.valid&&g.cal;
+
+  // Max value for scaling - use raw if no goals, % if goals set
+  var allVals=[];
+  totals.forEach(function(t){
+    if(useGoalPct){
+      if(g.cal) allVals.push(t.cal/g.cal*100);
+      if(g.carb) allVals.push(t.carb/g.carb*100);
+      if(g.prot) allVals.push(t.prot/g.prot*100);
+      if(g.fat) allVals.push(t.fat/g.fat*100);
+    } else {
+      allVals.push(t.cal);
+    }
+  });
+  var maxVal=Math.max.apply(null,allVals.concat([useGoalPct?100:1]));
+  // Y axis labels (5 levels)
+  var yLabels=[];
+  for(var yi=4;yi>=0;yi--){
+    yLabels.push(useGoalPct?Math.round(maxVal*yi/4)+'%':Math.round(maxVal*yi/4));
+  }
+
+  html+='<div class="chart-panel">';
+  html+='<div class="chart-title">Weekly nutrition — all metrics</div>';
+  html+='<div class="chart-subtitle">'+DAYS_SHORT[0]+' '+dates[0]+' – '+DAYS_SHORT[6]+' '+dates[6]+(useGoalPct?' · shown as % of daily goal':'')+'</div>';
+
+  // Chart area
+  html+='<div style="position:relative;padding-left:36px;margin-top:12px">';
+  // Y axis
+  html+='<div style="position:absolute;left:0;top:0;bottom:28px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">';
+  yLabels.forEach(function(l){
+    html+='<div style="font-size:9px;color:var(--color-text-tertiary);line-height:1;text-align:right;width:30px">'+l+'</div>';
+  });
+  html+='</div>';
+
+  // Chart body
+  html+='<div style="display:flex;align-items:flex-end;gap:4px;height:160px;padding-bottom:28px;border-bottom:0.5px solid var(--color-border-tertiary);position:relative;">';
+
+  // Grid lines
+  html+='<div style="position:absolute;left:0;right:0;top:0;bottom:28px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">';
+  for(var gi=0;gi<5;gi++){
+    html+='<div style="border-top:0.5px dashed var(--color-border-tertiary);width:100%"></div>';
+  }
+  html+='</div>';
+
+  // Goal line at 100% if using pct
+  if(useGoalPct){
+    var goalLinePct=Math.min(100,100/maxVal*100);
+    html+='<div style="position:absolute;left:0;right:0;bottom:calc(28px + '+goalLinePct+'%);border-top:1.5px dashed #888;opacity:.4;pointer-events:none;z-index:1"></div>';
+  }
+
+  // Bars per day
+  dates.forEach(function(date,i){
     var t=totals[i];
     var isToday=date===today;
     var has=t.cal>0;
-    var calPct=g.cal?Math.min(100,Math.round(t.cal/g.cal*100)):0;
-    var carbPct=g.carb?Math.min(100,Math.round(t.carb/g.carb*100)):0;
-    var protPct=g.prot?Math.min(100,Math.round(t.prot/g.prot*100)):0;
-    var fatPct=g.fat?Math.min(100,Math.round(t.fat/g.fat*100)):0;
-    var over=g.cal&&t.cal>g.cal;
-    var statusHtml='';
-    if(has){
-      if(over) statusHtml='<span class="wd-status over">Over</span>';
-      else if(calPct>=90) statusHtml='<span class="wd-status done">On track</span>';
-      else if(calPct>=50) statusHtml='<span class="wd-status partial">Partial</span>';
-      else statusHtml='<span class="wd-status partial">Low</span>';
-    }
-    html+='<div class="wd-card'+(isToday?' today':'')+(!has?' empty':'')+'">';
-    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(has?'12px':'0')+'">';
-    html+='<span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">'+DAYS_SHORT[i]+'</span>';
-    html+='<span style="font-size:11px;color:var(--color-text-tertiary)">'+date+'</span>';
-    if(isToday) html+='<span class="wd-today-badge">Today</span>';
-    html+='<span style="margin-left:auto;font-size:13px;font-weight:500;color:var(--color-text-primary)">';
-    if(has) html+=t.cal.toLocaleString()+' <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">/ '+(g.cal||'--')+' kcal</span>';
-    html+='</span>'+statusHtml+'</div>';
-    if(has){
-      html+='<div style="display:flex;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">';
-      var sections=[['kcal',t.cal.toLocaleString(),(g.cal||'--')+'',calPct,'#D85A30'],['Carbs',t.carb+'g',(g.carb||'--')+'g',carbPct,'#378ADD'],['Protein',t.prot+'g',(g.prot||'--')+'g',protPct,'#1D9E75'],['Fat',t.fat+'g',(g.fat||'--')+'g',fatPct,'#EF9F27']];
-      sections.forEach(function(s,si){
-        html+='<div style="flex:1;padding:10px 12px;'+(si<3?'border-right:0.5px solid var(--color-border-tertiary);':'')+'">';
-        html+='<div style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">'+s[0]+'</div>';
-        html+='<div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:2px">'+s[1]+'</div>';
-        html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">/ '+s[2]+'</div>';
-        html+='<div style="height:4px;border-radius:99px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:3px"><div style="width:'+s[3]+'%;height:100%;border-radius:99px;background:'+s[4]+'"></div></div>';
-        html+='<div style="font-size:10px;color:'+s[4]+';font-weight:500">'+s[3]+'%</div>';
-        html+='</div>';
-      });
+
+    html+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;position:relative">';
+    html+='<div style="display:flex;align-items:flex-end;gap:1px;width:100%;justify-content:center;height:132px">';
+
+    metrics.forEach(function(m){
+      var raw=t[m.key]||0;
+      var pct=useGoalPct&&m.goal?Math.min(100,raw/m.goal*100):raw;
+      var barH=maxVal>0?Math.min(100,pct/maxVal*100):0;
+      var over=m.goal&&raw>m.goal;
+      html+='<div style="flex:1;max-width:14px;height:'+barH+'%;background:'+(has?(over?'#A32D2D':m.color):'var(--color-border-tertiary)')+';border-radius:2px 2px 0 0;position:relative;cursor:pointer" title="'+m.label+': '+raw+(m.unit==='kcal'?' kcal':'g')+'">';
       html+='</div>';
-    }
+    });
+
     html+='</div>';
-  }
+    // Day label
+    html+='<div style="position:absolute;bottom:4px;font-size:9px;color:'+(isToday?'var(--color-text-primary)':'var(--color-text-tertiary)')+';font-weight:'+(isToday?'600':'400')+';text-align:center;width:100%">'+DAYS_SHORT[i]+'</div>';
+    html+='</div>';
+  });
+
+  html+='</div></div>';
+
+  // Legend
+  html+='<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">';
+  metrics.forEach(function(m){
+    html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:'+m.color+'"></div>'+m.label+(m.goal&&g.valid?' (goal: '+m.goal+(m.unit==='kcal'?' kcal':'g')+')':'')+'</div>';
+  });
+  html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:#A32D2D"></div>Over goal</div>';
+  html+='</div>';
   html+='</div>';
 
   // ── Category breakdown ──
@@ -823,7 +801,6 @@ function renderWeek(){
   }
 
   document.getElementById('weekPanel').innerHTML=html;
-  // Chart tab click handlers
   document.querySelectorAll('.chart-tab').forEach(function(tab){
     tab.addEventListener('click',function(){setChartMetric(tab.dataset.metric);});
   });
