@@ -95,7 +95,7 @@
   .panel-hint{font-size:10px;color:var(--color-text-tertiary)}
   input[type=text].fsearch{width:100%;border:none;border-bottom:0.5px solid var(--color-border-tertiary);padding:7px 13px;font-size:12px;background:var(--color-background-primary);color:var(--color-text-primary);outline:none}
   input[type=text].fsearch::placeholder{color:var(--color-text-tertiary)}
-  .food-list{overflow-y:auto}
+  .food-list{overflow-y:auto;max-height:200px}
   .freq-header{padding:5px 13px 3px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
   .food-item{padding:8px 13px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:grab;user-select:none;transition:background .12s}
   .food-item:last-child{border-bottom:none}
@@ -202,6 +202,24 @@
   .data-msg{font-size:11px;color:#0F6E56;opacity:0;transition:opacity .3s;margin-left:4px}
   .data-msg.show{opacity:1}
   .install-tip-close{margin-left:auto;cursor:pointer;color:var(--color-text-tertiary);font-size:16px}
+  .calc-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-top:8px}
+  .calc-head{padding:9px 13px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;justify-content:space-between;align-items:center}
+  .calc-body{padding:12px 13px;display:flex;flex-direction:column;gap:8px}
+  .calc-row{display:flex;gap:6px;align-items:center}
+  .calc-label{font-size:11px;color:var(--color-text-secondary);width:58px;min-width:58px;text-align:right;flex-shrink:0;padding-right:4px}
+  .calc-input{flex:1;min-width:0;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 8px;background:var(--color-background-primary);color:var(--color-text-primary)}
+  .calc-unit{font-size:11px;color:var(--color-text-tertiary);flex-shrink:0}
+  .calc-btn{width:100%;font-size:12px;font-weight:500;padding:7px;border:0.5px solid #185FA5;border-radius:var(--border-radius-md);background:#E6F1FB;color:#185FA5;cursor:pointer;margin-top:2px}
+  .calc-btn:hover{background:#B5D4F4}
+  .calc-result{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;display:none}
+  .calc-result.show{display:block}
+  .calc-result-title{font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
+  .calc-result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .calc-result-item{text-align:center}
+  .calc-result-val{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+  .calc-result-lbl{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+  .calc-use-btn{width:100%;font-size:11px;font-weight:500;padding:6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;margin-top:8px}
+  .calc-use-btn:hover{background:var(--color-background-secondary)}
   #autoSaveIndicator{font-size:11px;color:#0F6E56;}
 </style>
 </head>
@@ -306,6 +324,30 @@
           <div class="aff-actions">
             <button class="aff-cancel" onclick="closeAddForm()">Cancel</button>
             <button class="aff-save" id="affSaveBtn" onclick="saveCustomFood()"><i class="ti ti-check" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Add to library</button>
+          </div>
+        </div>
+      </div>
+      <div class="calc-panel">
+        <div class="calc-head">
+          <span>&#9881; Per 100g calculator</span>
+        </div>
+        <div class="calc-body" id="calcBody">
+          <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px">Enter total amount + nutrition → get per 100g values</div>
+          <div class="calc-row"><span class="calc-label">Amount</span><input class="calc-input" id="cAmt" type="number" min="1" placeholder="e.g. 300"/><span class="calc-unit">g</span></div>
+          <div class="calc-row"><span class="calc-label">Calories</span><input class="calc-input" id="cCal" type="number" min="0" placeholder="kcal"/><span class="calc-unit">kcal</span></div>
+          <div class="calc-row"><span class="calc-label">Carbs</span><input class="calc-input" id="cCarb" type="number" min="0" step="0.1" placeholder="g"/><span class="calc-unit">g</span></div>
+          <div class="calc-row"><span class="calc-label">Protein</span><input class="calc-input" id="cProt" type="number" min="0" step="0.1" placeholder="g"/><span class="calc-unit">g</span></div>
+          <div class="calc-row"><span class="calc-label">Fat</span><input class="calc-input" id="cFat" type="number" min="0" step="0.1" placeholder="g"/><span class="calc-unit">g</span></div>
+          <button class="calc-btn" onclick="runCalc()">&#9654; Calculate per 100g</button>
+          <div class="calc-result" id="calcResult">
+            <div class="calc-result-title">Per 100g:</div>
+            <div class="calc-result-grid">
+              <div class="calc-result-item"><div class="calc-result-val" id="rCal">—</div><div class="calc-result-lbl">kcal</div></div>
+              <div class="calc-result-item"><div class="calc-result-val" id="rCarb" style="color:#378ADD">—</div><div class="calc-result-lbl">Carbs</div></div>
+              <div class="calc-result-item"><div class="calc-result-val" id="rProt" style="color:#1D9E75">—</div><div class="calc-result-lbl">Protein</div></div>
+              <div class="calc-result-item"><div class="calc-result-val" id="rFat" style="color:#EF9F27">—</div><div class="calc-result-lbl">Fat</div></div>
+            </div>
+            <button class="calc-use-btn" onclick="useCalcResult()">&#43; Use these values when adding food</button>
           </div>
         </div>
       </div>
@@ -769,7 +811,7 @@ function syncLibraryHeight(){
     if(!grid||!panel||!fl)return;
     const gridH=grid.offsetHeight;
     const panelNonList=panel.offsetHeight-fl.offsetHeight;
-    const available=Math.max(160,gridH-panelNonList);
+    const available=Math.max(120,Math.min(200,gridH-panelNonList));
     fl.style.maxHeight=available+'px';
   });
 }
@@ -886,6 +928,33 @@ function toggleDay(date){
   }
   // re-render just the toggle arrow without full re-render
   renderMealGrid();
+}
+function runCalc(){
+  const amt=parseFloat(document.getElementById('cAmt').value);
+  const cal=parseFloat(document.getElementById('cCal').value)||0;
+  const carb=parseFloat(document.getElementById('cCarb').value)||0;
+  const prot=parseFloat(document.getElementById('cProt').value)||0;
+  const fat=parseFloat(document.getElementById('cFat').value)||0;
+  if(!amt||amt<=0){alert('Please enter a valid amount in grams');return;}
+  const f=100/amt;
+  document.getElementById('rCal').textContent=Math.round(cal*f);
+  document.getElementById('rCarb').textContent=Math.round(carb*f*10)/10+'g';
+  document.getElementById('rProt').textContent=Math.round(prot*f*10)/10+'g';
+  document.getElementById('rFat').textContent=Math.round(fat*f*10)/10+'g';
+  document.getElementById('calcResult').classList.add('show');
+}
+function useCalcResult(){
+  const cal=document.getElementById('rCal').textContent;
+  const carb=document.getElementById('rCarb').textContent.replace('g','');
+  const prot=document.getElementById('rProt').textContent.replace('g','');
+  const fat=document.getElementById('rFat').textContent.replace('g','');
+  if(cal==='—')return;
+  // Open add food form and prefill with calculated values
+  openAddForm();
+  document.getElementById('affCal').value=cal;
+  document.getElementById('affCarb').value=carb;
+  document.getElementById('affProt').value=prot;
+  document.getElementById('affFat').value=fat;
 }
 function renderAll(){renderMacroBar();renderFoodList(currentSearch);renderMealGrid();if(currentTab==='week')renderWeek();}
 document.getElementById('calGoal').addEventListener('input',renderAll);
