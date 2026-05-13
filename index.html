@@ -686,33 +686,34 @@ function renderWeek(){
     {key:'fat',label:'Fat',unit:'g',color:'#EF9F27',goal:g.fat},
   ];
   var useGoalPct=g.valid&&g.cal;
-
-  // Fixed Y axis 0-25-50-75-100-125% (25% steps), cap display at 125%
+  // Y axis: 0,25,50,75,100,125 — max display 125%
   var yMax=125;
   var ySteps=[0,25,50,75,100,125];
+  var chartBodyH=140; // px for the bar area only
+  var labelH=22; // px below chart for day labels
 
   html+='<div class="chart-panel">';
   html+='<div class="chart-title">Weekly nutrition — all metrics</div>';
-  html+='<div class="chart-subtitle">'+DAYS_SHORT[0]+' '+dates[0]+' – '+DAYS_SHORT[6]+' '+dates[6]+(useGoalPct?' · shown as % of daily goal':'')+'</div>';
+  html+='<div class="chart-subtitle">'+DAYS_SHORT[0]+' '+dates[0]+' – '+DAYS_SHORT[6]+' '+dates[6]+(useGoalPct?' · % of daily goal':'')+'</div>';
 
-  // Chart area
-  var chartH=160;
-  html+='<div style="position:relative;padding-left:40px;margin-top:16px">';
+  html+='<div style="position:relative;padding-left:36px;margin-top:16px">';
 
-  // Y axis labels
-  html+='<div style="position:absolute;left:0;top:0;bottom:28px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">';
+  // Y axis labels — aligned to chartBodyH
+  html+='<div style="position:absolute;left:0;top:0;height:'+chartBodyH+'px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">';
   ySteps.slice().reverse().forEach(function(l){
-    html+='<div style="font-size:9px;color:var(--color-text-tertiary);line-height:1;text-align:right;width:34px">'+l+'%</div>';
+    html+='<div style="font-size:9px;color:var(--color-text-tertiary);line-height:1;text-align:right;width:30px">'+l+'%</div>';
   });
   html+='</div>';
 
-  // Chart body
-  html+='<div style="display:flex;align-items:flex-end;height:'+chartH+'px;padding-bottom:28px;border-bottom:0.5px solid var(--color-border-tertiary);position:relative;overflow:visible">';
+  // Chart body — fixed height, no padding-bottom, labels outside below
+  html+='<div style="height:'+chartBodyH+'px;border-bottom:1.5px solid var(--color-border-secondary);border-left:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-end;position:relative;background:var(--color-background-primary)">';
 
-  // Grid lines at 25% intervals
+  // Grid lines at 25% steps (inside chart body only, no overflow)
   ySteps.forEach(function(s){
-    var pct=s/yMax*100;
-    html+='<div style="position:absolute;left:0;right:0;bottom:calc(28px + '+pct+'%);border-top:0.5px '+(s===100?'solid #888':'dashed var(--color-border-tertiary)')+';opacity:'+(s===100?'0.6':'0.8')+';pointer-events:none;z-index:1"></div>';
+    if(s===0) return; // skip baseline, handled by border-bottom
+    var fromBottom=s/yMax*100;
+    var isGoal=s===100;
+    html+='<div style="position:absolute;left:0;right:0;bottom:'+fromBottom+'%;border-top:'+(isGoal?'2px dashed #E24B4A':'0.5px dashed var(--color-border-tertiary)')+';pointer-events:none;z-index:1"></div>';
   });
 
   // Bars per day
@@ -721,50 +722,48 @@ function renderWeek(){
     var isToday=date===today;
     var has=t.cal>0;
 
-    html+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">';
-    html+='<div style="display:flex;align-items:flex-end;gap:1px;width:100%;justify-content:center;height:'+(chartH-28)+'px;position:relative">';
-
+    html+='<div style="flex:1;display:flex;align-items:flex-end;justify-content:center;gap:1px;height:100%;position:relative;padding:0 2px">';
     metrics.forEach(function(m){
       var raw=t[m.key]||0;
       var pct=useGoalPct&&m.goal?raw/m.goal*100:0;
-      // bars exceeding 125% are capped visually but shown with overflow
-      var barPct=Math.min(pct,yMax);
-      var barH=yMax>0?barPct/yMax*100:0;
-      html+='<div style="flex:1;max-width:13px;height:'+barH+'%;background:'+(has?m.color:'var(--color-border-tertiary)')+';border-radius:2px 2px 0 0;position:relative" title="'+m.label+': '+raw+(m.unit==='kcal'?' kcal':'g')+' ('+Math.round(pct)+'%)">';
-      // show value on hover via title, no color change for over goal
-      html+='</div>';
+      var barPct=Math.min(pct,yMax)/yMax*100;
+      html+='<div style="flex:1;max-width:12px;height:'+barPct+'%;background:'+(has?m.color:'transparent')+';border-radius:2px 2px 0 0" title="'+m.label+': '+raw+(m.unit==='kcal'?' kcal':'g')+' ('+Math.round(pct)+'%)"></div>';
     });
-
-    html+='</div>';
-    // Day label — positioned below the chart line
-    html+='<div style="position:absolute;bottom:4px;font-size:9px;color:'+(isToday?'var(--color-text-primary)':'var(--color-text-tertiary)')+';font-weight:'+(isToday?'700':'400')+';text-align:center;width:100%;white-space:nowrap">'+DAYS_SHORT[i]+'<br><span style="font-size:8px">'+date+'</span></div>';
     html+='</div>';
   });
+  html+='</div>'; // end chart body
 
-  html+='</div></div>';
+  // Day labels OUTSIDE below the chart
+  html+='<div style="display:flex;height:'+labelH+'px;align-items:center">';
+  dates.forEach(function(date,i){
+    var isToday=date===today;
+    html+='<div style="flex:1;text-align:center;font-size:10px;font-weight:'+(isToday?'700':'400')+';color:'+(isToday?'var(--color-text-primary)':'var(--color-text-tertiary)')+'">'+DAYS_SHORT[i]+'</div>';
+  });
+  html+='</div>';
 
-  // Legend
-  html+='<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">';
+  html+='</div>'; // end padding-left wrapper
+
+  // Legend — no "goal" text, just colors + names
+  html+='<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;padding-left:36px">';
   metrics.forEach(function(m){
-    html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:'+m.color+'"></div>'+m.label+(m.goal&&g.valid?' (goal: '+m.goal+(m.unit==='kcal'?' kcal':'g')+')':'')+'</div>';
+    html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:'+m.color+'"></div>'+m.label+'</div>';
   });
-  html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:20px;height:1px;border-top:1.5px solid #888"></div>100% goal</div>';
-  html+='</div></div>';
+  html+='<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)"><div style="width:18px;height:0;border-top:2px dashed #E24B4A"></div>100% goal</div>';
+  html+='</div>';
+  html+='</div>'; // end chart-panel
 
-  // ── Diet analysis (donut-style using CSS) ──
-  var catCounts={};var catCals={};
+  // ── Diet analysis stacked bar ──
+  var catCals={};
   dates.forEach(function(date){
     MEALS.forEach(function(meal){
       (mealData[date]&&mealData[date][meal]?mealData[date][meal]:[]).forEach(function(entry){
         var f=FOODS.find(function(x){return x.id===entry.foodId;});if(!f)return;
         var cat=f.cat||'other';
         var mc=calcMacros(f,entry.amount);
-        catCounts[cat]=(catCounts[cat]||0)+1;
         catCals[cat]=(catCals[cat]||0)+mc.cal;
       });
     });
   });
-
   var catLabels={meat:'Meat & Fish',grains:'Grains & Carbs',dairy:'Eggs & Dairy',vegetables:'Vegetables',fruits:'Fruits',drinks:'Drinks',snacks:'Snacks',meals:'Meals & Dishes',other:'Other',protein:'Protein',carb:'Carbs',veggie:'Veggie',fat:'Fat',dish:'Dish',custom:'Other'};
   var catColors={meat:'#C0392B',grains:'#2980B9',dairy:'#E67E22',vegetables:'#27AE60',fruits:'#F39C12',drinks:'#16A085',snacks:'#8E44AD',meals:'#2C3E50',other:'#95A5A6',protein:'#C0392B',carb:'#2980B9',veggie:'#27AE60',fat:'#E67E22',dish:'#2C3E50',custom:'#95A5A6'};
   var sortedCats=Object.keys(catCals).sort(function(a,b){return catCals[b]-catCals[a];});
@@ -774,8 +773,6 @@ function renderWeek(){
     html+='<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 18px;margin-top:16px">';
     html+='<div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Weekly diet analysis</div>';
     html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:14px">Calorie contribution by food type this week</div>';
-
-    // Stacked horizontal bar (full width = 100%)
     html+='<div style="height:28px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:14px">';
     sortedCats.forEach(function(cat){
       var pct=totalTrackedCal?catCals[cat]/totalTrackedCal*100:0;
@@ -786,17 +783,15 @@ function renderWeek(){
       html+='</div>';
     });
     html+='</div>';
-
-    // Legend with analysis text
     html+='<div style="display:flex;flex-direction:column;gap:6px">';
     sortedCats.forEach(function(cat){
       var pct=totalTrackedCal?Math.round(catCals[cat]/totalTrackedCal*100):0;
       if(pct<1) return;
       var c=catColors[cat]||'#888';
       var analysis='';
-      if(pct>=30) analysis='· Main calorie source this week';
-      else if(pct>=15) analysis='· Significant portion of diet';
-      else if(pct<=5) analysis='· Very small contribution';
+      if(pct>=30) analysis=' · Main calorie source';
+      else if(pct>=15) analysis=' · Significant portion';
+      else if(pct<=5) analysis=' · Minor contribution';
       html+='<div style="display:flex;align-items:center;gap:8px">';
       html+='<div style="width:10px;height:10px;border-radius:2px;background:'+c+';flex-shrink:0"></div>';
       html+='<span style="font-size:12px;color:var(--color-text-primary);min-width:130px">'+(catLabels[cat]||cat)+'</span>';
@@ -808,9 +803,6 @@ function renderWeek(){
   }
 
   document.getElementById('weekPanel').innerHTML=html;
-  document.querySelectorAll('.chart-tab').forEach(function(tab){
-    tab.addEventListener('click',function(){setChartMetric(tab.dataset.metric);});
-  });
 }
 
 function setChartMetric(m){
